@@ -1,5 +1,7 @@
 import React, { useState } from "react";
 import "./CSS/LoginSignup.css";
+import googleIcon from "../components/Assets/google-icon.png"; // Import the local image
+
 
 const LoginSignup = () => {
   const [state, setState] = useState("Login");
@@ -8,6 +10,11 @@ const LoginSignup = () => {
   const changeHandler = (e) => {
     setFormData({ ...formData, [e.target.name]: e.target.value });
   };
+  const handleGoogleLogin = () => {
+    // Add Google login functionality here
+    console.log("Google login clicked");
+  };
+
 
   const login = async () => {
     try {
@@ -90,10 +97,18 @@ const LoginSignup = () => {
         </div>
 
         <button onClick={() => (state === "Login" ? login() : signup())}>Continue</button>
+        
+        <button className="loginsignup-google-btn" onClick={handleGoogleLogin}>
+          <img
+            src={googleIcon} // Use the local image here
+            alt="Google Icon"
+          />
+          Continue with Google
+        </button>
 
         {state === "Login" ? (
           <p className="loginsignup-login">
-            Create an account? <span onClick={() => setState("Sign Up")}>Click here</span>
+            Create an account? <span onClick={() => setState("Sign Up")}>Sign up</span>
           </p>
         ) : (
           <p className="loginsignup-login">

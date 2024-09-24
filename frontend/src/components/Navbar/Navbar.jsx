@@ -7,6 +7,12 @@ import { Link } from 'react-router-dom';
 const Navbar = () => {
   const [menu, setMenu] = useState('shop');
 
+  // Function to handle logout
+  const handleLogout = () => {
+    localStorage.removeItem('auth-token');  // Remove token from localStorage
+    window.location.replace("/");  // Redirect to landing page
+  };
+
   return (
     <div className='navbar'>
       <div className='nav-logo'>
@@ -22,15 +28,18 @@ const Navbar = () => {
         <li onClick={() => setMenu('womens')}><Link to='/womens' style={{ textDecoration: 'none' }}>womens</Link> {menu === 'womens' && <hr />}</li>
         <li onClick={() => setMenu('kids')}><Link to='/kids' style={{ textDecoration: 'none' }}>kids</Link> {menu === 'kids' && <hr />}</li>
         <li onClick={() => setMenu('SELLERS CORNER')}><Link to='/sellerscorner' style={{ textDecoration: 'none' }}>SELLERS CORNER</Link> {menu === 'SELLERS CORNER' && <hr />}</li>
-        <li onClick={() => setMenu('GO THRIFT')}><Link to='/gothrift' style={{ textDecoration: 'none' }}>GO THRIFT</Link> {menu === 'GO THRIFT' && <hr />} </li>
+        <li onClick={() => setMenu('GO THRIFT')}><Link to='/gothrift' style={{ textDecoration: 'none' }}>GO THRIFT</Link> {menu === 'GO THRIFT' && <hr />}</li>
       </ul>
       
-      <div className='nav-login-cart'>
-        <Link to='/login'><button>Login</button></Link>
-        <Link to='/cart'>
-          <img src={cart_icon} alt='Cart Icon' />
-        </Link>
-        <div className='nav-cart-count'>0</div>
+      <div className="nav-login-cart">
+        {localStorage.getItem('auth-token') ? (
+          <button onClick={handleLogout}>Logout</button>
+        ) : (
+          <Link to='/login' style={{ textDecoration: 'none' }}>
+            <button>Login</button>
+          </Link>
+        )}
+        <Link to="/cart"><img src={cart_icon} alt="cart" /></Link>
       </div>
     </div>
   );
