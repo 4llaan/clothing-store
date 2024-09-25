@@ -6,6 +6,7 @@ const LoginSignup = () => {
   const [state, setState] = useState("Login");
   const [formData, setFormData] = useState({ username: "", email: "", password: "" });
   const [errors, setErrors] = useState({ username: "", email: "", password: "" });
+  const [successMessage, setSuccessMessage] = useState(""); // For success message
 
   const changeHandler = (e) => {
     setFormData({ ...formData, [e.target.name]: e.target.value });
@@ -128,8 +129,12 @@ const LoginSignup = () => {
       const data = await response.json();
 
       if (response.ok) {
-        localStorage.setItem('auth-token', data.token);
-        window.location.replace("/");
+        setSuccessMessage("");
+        setFormData({ username: "", email: "", password: "" }); // Reset the form data to empty
+        setTimeout(() => {
+          setSuccessMessage("");
+          setState("Login");
+        }, 0); // Redirect to login after 2 seconds
       } else {
         alert(data.errors || "Signup failed");
       }
@@ -143,6 +148,10 @@ const LoginSignup = () => {
     <div className="loginsignup">
       <div className="loginsignup-container">
         <h1>{state}</h1>
+
+        {/* Success Message */}
+        {successMessage && <p className="success-message">{successMessage}</p>}
+
         <div className="loginsignup-fields">
           {state === "Sign Up" && (
             <>
