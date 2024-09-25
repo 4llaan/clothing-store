@@ -2,7 +2,6 @@ import React, { useState } from "react";
 import "./CSS/LoginSignup.css";
 import googleIcon from "../components/Assets/google-icon.png"; // Import the local image
 
-
 const LoginSignup = () => {
   const [state, setState] = useState("Login");
   const [formData, setFormData] = useState({ username: "", email: "", password: "" });
@@ -10,13 +9,32 @@ const LoginSignup = () => {
   const changeHandler = (e) => {
     setFormData({ ...formData, [e.target.name]: e.target.value });
   };
+
   const handleGoogleLogin = () => {
     // Add Google login functionality here
     console.log("Google login clicked");
   };
 
+  // Validation function to check if any field is empty
+  const validateForm = () => {
+    if (state === "Sign Up" && !formData.username) {
+      alert("Please enter your name.");
+      return false;
+    }
+    if (!formData.email) {
+      alert("Please enter your email.");
+      return false;
+    }
+    if (!formData.password) {
+      alert("Please enter your password.");
+      return false;
+    }
+    return true;
+  };
 
   const login = async () => {
+    if (!validateForm()) return; // Don't proceed if validation fails
+
     try {
       const response = await fetch('http://localhost:4000/login', {
         method: 'POST',
@@ -42,6 +60,8 @@ const LoginSignup = () => {
   };
 
   const signup = async () => {
+    if (!validateForm()) return; // Don't proceed if validation fails
+
     try {
       const response = await fetch('http://localhost:4000/signup', {
         method: 'POST',
