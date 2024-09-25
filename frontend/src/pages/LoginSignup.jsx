@@ -5,9 +5,46 @@ import googleIcon from "../components/Assets/google-icon.png"; // Import the loc
 const LoginSignup = () => {
   const [state, setState] = useState("Login");
   const [formData, setFormData] = useState({ username: "", email: "", password: "" });
+  const [errors, setErrors] = useState({ username: "", email: "", password: "" });
 
   const changeHandler = (e) => {
     setFormData({ ...formData, [e.target.name]: e.target.value });
+
+    // Live validation on each field change
+    if (e.target.name === "username") {
+      if (state === "Sign Up" && !e.target.value.trim()) {
+        setErrors((prevErrors) => ({ ...prevErrors, username: "Name is required." }));
+      } else {
+        setErrors((prevErrors) => ({ ...prevErrors, username: "" }));
+      }
+    }
+
+    if (e.target.name === "email") {
+      const emailPattern = /^[^\s@]+@[^\s@]+\.[^\s@]+$/; // Basic email pattern
+      if (!e.target.value.trim()) {
+        setErrors((prevErrors) => ({ ...prevErrors, email: "Email is required." }));
+      } else if (!emailPattern.test(e.target.value)) {
+        setErrors((prevErrors) => ({ ...prevErrors, email: "Please enter a valid email (e.g., example@gmail.com)." }));
+      } else if (!(/\.(com|in)$/).test(e.target.value)) {
+        setErrors((prevErrors) => ({ ...prevErrors, email: "Email must end with '.com' or '.in'." }));
+      } else {
+        setErrors((prevErrors) => ({ ...prevErrors, email: "" }));
+      }
+    }
+
+    if (e.target.name === "password") {
+      const passwordPattern = /^(?=.*[A-Z])(?=.*[0-9])(?=.*[!@#$%^&*])/; // Password must contain uppercase, number, and special character
+      if (!e.target.value.trim()) {
+        setErrors((prevErrors) => ({ ...prevErrors, password: "Password is required." }));
+      } else if (!passwordPattern.test(e.target.value)) {
+        setErrors((prevErrors) => ({
+          ...prevErrors,
+          password: "Password must contain at least 1 uppercase letter, 1 number, and 1 special character.",
+        }));
+      } else {
+        setErrors((prevErrors) => ({ ...prevErrors, password: "" }));
+      }
+    }
   };
 
   const handleGoogleLogin = () => {
@@ -15,21 +52,37 @@ const LoginSignup = () => {
     console.log("Google login clicked");
   };
 
-  // Validation function to check if any field is empty
   const validateForm = () => {
-    if (state === "Sign Up" && !formData.username) {
-      alert("Please enter your name.");
-      return false;
+    let isValid = true;
+    let validationErrors = { ...errors };
+
+    if (state === "Sign Up" && !formData.username.trim()) {
+      validationErrors.username = "Name is required.";
+      isValid = false;
     }
-    if (!formData.email) {
-      alert("Please enter your email.");
-      return false;
+    const emailPattern = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!formData.email.trim()) {
+      validationErrors.email = "Email is required.";
+      isValid = false;
+    } else if (!emailPattern.test(formData.email)) {
+      validationErrors.email = "Please enter a valid email (e.g., example@gmail.com).";
+      isValid = false;
+    } else if (!/\.(com|in)$/.test(formData.email)) {
+      validationErrors.email = "Email must end with '.com' or '.in'.";
+      isValid = false;
     }
-    if (!formData.password) {
-      alert("Please enter your password.");
-      return false;
+
+    const passwordPattern = /^(?=.*[A-Z])(?=.*[0-9])(?=.*[!@#$%^&*])/;
+    if (!formData.password.trim()) {
+      validationErrors.password = "Password is required.";
+      isValid = false;
+    } else if (!passwordPattern.test(formData.password)) {
+      validationErrors.password = "Password must contain at least 1 uppercase letter, 1 number, and 1 special character.";
+      isValid = false;
     }
-    return true;
+
+    setErrors(validationErrors);
+    return isValid;
   };
 
   const login = async () => {
@@ -92,28 +145,37 @@ const LoginSignup = () => {
         <h1>{state}</h1>
         <div className="loginsignup-fields">
           {state === "Sign Up" && (
-            <input 
-              type="text" 
-              placeholder="Your name" 
-              name="username" 
-              value={formData.username} 
-              onChange={changeHandler} 
-            />
+            <>
+              <input
+                type="text"
+                placeholder="Your name"
+                name="username"
+                value={formData.username}
+                onChange={changeHandler}
+                className={errors.username ? "error-input" : ""}
+              />
+              {errors.username && <p className="error-message">{errors.username}</p>}
+            </>
           )}
-          <input 
-            type="email" 
-            placeholder="Email address" 
-            name="email" 
-            value={formData.email} 
-            onChange={changeHandler} 
+          <input
+            type="email"
+            placeholder="Email address"
+            name="email"
+            value={formData.email}
+            onChange={changeHandler}
+            className={errors.email ? "error-input" : ""}
           />
-          <input 
-            type="password" 
-            placeholder="Password" 
-            name="password" 
-            value={formData.password} 
-            onChange={changeHandler} 
+          {errors.email && <p className="error-message">{errors.email}</p>}
+
+          <input
+            type="password"
+            placeholder="Password"
+            name="password"
+            value={formData.password}
+            onChange={changeHandler}
+            className={errors.password ? "error-input" : ""}
           />
+          {errors.password && <p className="error-message">{errors.password}</p>}
         </div>
 
         <button onClick={() => (state === "Login" ? login() : signup())}>Continue</button>
