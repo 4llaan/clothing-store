@@ -12,6 +12,7 @@ import ShopCategory from './pages/ShopCategory';
 import men_banner from './components/Assets/banner_mens.png'
 import women_banner from './components/Assets/banner_women.png'
 import kid_banner from './components/Assets/banner_kids.png';
+import Profile from './components/Profile/Profile';
 
 
 
@@ -32,6 +33,7 @@ function App() {
   <Route exact path="/gothrift" element={<Gothrift />} />
   <Route exact path="/sellerscorner" element={<SellersCorner />} />
   <Route path="/Login" element={<LoginSignup />} />
+  <Route exact path="/profile" element={<Profile />} />
 </Routes>
         <Footer />
       </Router>

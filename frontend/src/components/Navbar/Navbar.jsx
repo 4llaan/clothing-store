@@ -1,16 +1,44 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import './Navbar.css';
 import logo from '../Assets/logo.png';
 import cart_icon from '../Assets/cart_icon.png';
+import default_profile from '../Assets/default_profile.png';
 import { Link } from 'react-router-dom';
 
 const Navbar = () => {
   const [menu, setMenu] = useState('shop');
+  const [userProfile, setUserProfile] = useState(null);
 
-  // Function to handle logout
+  useEffect(() => {
+    const fetchUserProfile = async () => {
+      const token = localStorage.getItem('auth-token'); // Retrieve the auth token
+      if (token) {
+        try {
+          const response = await fetch('http://localhost:4000/api/profile', {
+            method: 'GET',
+            headers: {
+              'auth-token': token, // Send the token in the header for authentication
+            },
+          });
+
+          if (response.ok) {
+            const profileData = await response.json();
+            setUserProfile(profileData); // Update the state with user profile data
+          } else {
+            console.error('Failed to fetch user profile');
+          }
+        } catch (error) {
+          console.error('Error fetching profile:', error);
+        }
+      }
+    };
+
+    fetchUserProfile();
+  }, []);
+
   const handleLogout = () => {
-    localStorage.removeItem('auth-token');  // Remove token from localStorage
-    window.location.replace("/");  // Redirect to landing page
+    localStorage.removeItem('auth-token');
+    window.location.replace("/");
   };
 
   return (
@@ -33,7 +61,17 @@ const Navbar = () => {
       
       <div className="nav-login-cart">
         {localStorage.getItem('auth-token') ? (
-          <button onClick={handleLogout}>Logout</button>
+          <>
+            <div className="nav-profile">
+              <Link to="/profile" style={{ textDecoration: 'none' }}>
+                <img src={userProfile?.profilePic || default_profile} alt="Profile" className="profile-img" />
+              </Link>
+              <div className="profile-info">
+                <p>welcome,{userProfile?.name || "User"}</p> {/* Display the user's name */}
+                <button onClick={handleLogout}>Logout</button>
+              </div>
+            </div>
+          </>
         ) : (
           <Link to='/login' style={{ textDecoration: 'none' }}>
             <button>Login</button>

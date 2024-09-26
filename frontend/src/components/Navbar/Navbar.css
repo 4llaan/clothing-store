@@ -1,12 +1,11 @@
-
-
-  .navbar{
+.navbar {
     display: flex;
     justify-content: space-between;
     align-items: center;
     box-shadow: 0 1px 3px -2px black;
     padding: 15px 70px;
 }
+
 .nav-logo {
     display: flex;
     align-items: center;  
@@ -15,15 +14,16 @@
 }
 
 .nav-logo img {
-    width: 45px;  /* Sets the width of the image */
+    width: 45px;
 }
 
-.nav-logo p{
+.nav-logo p {
     color: #171717;
     font-size: 27px;
     font-weight: 600;
 }
-.nav-menu{
+
+.nav-menu {
     display: flex;
     align-items: center;
     list-style: none;
@@ -33,7 +33,7 @@
     font-weight: 500;
 }
 
-.nav-menu li{
+.nav-menu li {
     display: flex;
     flex-direction: column;
     align-items: center;
@@ -41,77 +41,108 @@
     gap: 3px;
     cursor: pointer;
 }
-.nav-menu hr{
+
+.nav-menu hr {
     border: none;
     width: 80%;
     height: 3px;
     border-radius: 10px;
     background: #FF4141;
 }
-.nav-login-cart{
+
+.nav-login-cart {
     display: flex;
     align-items: center;
     gap: 30px;
 }
 
+.nav-profile {
+    display: flex;
+    align-items: center;
+    gap: 8px; /* Space between profile icon and username */
+    cursor: pointer;
+    flex-direction: column;
+    text-align: center;
+}
+
+.profile-img {
+    width: 35px;
+    height: 35px;
+    border-radius: 50%;
+    object-fit: cover;
+    border: 1px solid #ddd;
+}
+
+.nav-profile p {
+    margin: 0;
+    font-size: 14px;
+    font-weight: 500;
+    color: black;
+}
+
 .nav-login-cart button {
-    width: 120px;
-    height: 40px;
-    outline: none;
-    border: none;
-    border-radius: 75px;
-    color: whitesmoke;
-    font-size: 16px;
+    width: 100px;
+    height: auto;
+    padding: 8px 15px;
+    border-radius: 20px;
+    font-size: 14px;
     font-weight: 500;
     background: blue;
+    color: white;
     cursor: pointer;
+    border: none; /* Removes the border */
 }
 
 
-.nav-login-cart img{
-    width: 35px;
+.nav-login-cart img {
+    width: 25px;
+    height: 25px;
 }
-.nav-cart-count{
+
+.nav-cart-count {
     width: 18px;
     height: 18px;
-    border-radius: 51%;
+    border-radius: 50%;
     display: flex;
     justify-content: center;
     align-items: center;
-    margin-top: -30px;
-    margin-left: -40px;
-    font-size: 14px;
+    margin-top: -10px;
+    margin-left: -15px;
+    font-size: 12px;
     background: red;
     color: white;
-}
-.nav-dropdown{
-    display: none;
+    position: relative;
+    top: -5px;
 }
 
 /* -------- media query---------- */
-@media(max-width:900px){
-    .nav{
+@media (max-width: 900px) {
+    .navbar {
         padding: 15px 40px;
     }
-    .nav-menu{
+
+    .nav-menu {
         gap: 15px;
     }
 }
 
-@media(max-width:750px){
-    .nav{
+@media (max-width: 750px) {
+    .navbar {
         padding: 15px 20px;
     }
-    .nav-login-cart{
+
+    .nav-login-cart {
         gap: 15px;
     }
-    .nav-dropdown{
+
+    .nav-dropdown {
         display: block;
         width: 30px;
         rotate: -90deg;
         transition: 0.5s;
-    } 
-    .nav-menu{
+    }
+
+    .nav-menu {
         display: none;
         height: 80px;
         width: 100%;
@@ -121,36 +152,40 @@
         top: 60px;
         left: 0;
     }
-    .nav-menu-visible{
+
+    .nav-menu-visible {
         display: flex;
     }
-    .nav-dropdown.open{
+
+    .nav-dropdown.open {
         transform: rotate(90deg);
     }
-    .nav-cart-count{
+
+    .nav-cart-count {
         margin-left: -25px;
     }
 }
 
-@media(max-width:500px){
-    .nav{
+@media (max-width: 500px) {
+    .navbar {
         padding: 15px 15px;
     }
 
-    .nav-logo img{
+    .nav-logo img {
         width: 30px;
     }
-    .nav-logo p{
+
+    .nav-logo p {
         font-size: 18px;
     }
-    .nav-menu-visible{
+
+    .nav-menu-visible {
         height: 70px;
         top: 60px;
     }
-    .nav-login-cart{
+
+    .nav-login-cart {
         transform: scale(0.8);
-    } 
-    .nav-login-cart{
         gap: 10px;
     }
 }
