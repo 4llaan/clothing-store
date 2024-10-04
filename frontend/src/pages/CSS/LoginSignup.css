@@ -73,14 +73,27 @@ input.error-input + .error-message {
     margin-bottom: 15px;
   }
   
-
-/* Forgot Password */
-.loginsignup-forgot {
-    margin-top: 10px;
-    font-size: 14px;
-    color: #5c5c5c;
+  .forgot-password {
     text-align: right;
-}
+    margin-top: 5px;
+    margin-bottom: 10px;
+  }
+  
+  .forgot-password a {
+    color: #007BFF; /* Change to your desired link color */
+    text-decoration: none;
+    font-size: 14px;
+    font-weight: 500;
+    transition: color 0.3s ease;
+  }
+  
+  .forgot-password a:hover {
+    color: #0056b3; /* Slightly darker color on hover */
+    text-decoration: underline;
+  }
+
+  
+
 
 .loginsignup-forgot span {
     color: #ff4141;

@@ -45,6 +45,18 @@ const fetchUser = (req, res, next) => {
     }
 };
 
+// New API to get logged-in user's profile details
+app.get('/api/profile', fetchUser, async (req, res) => {
+    try {
+        const user = await Users.findById(req.user.id).select('-password');  // Fetch user excluding the password field
+        res.send(user);
+    } catch (error) {
+        res.status(500).send("Internal server error");
+    }
+});
+
+
+
 // Create an endpoint for login 
 app.post('/login', async (req, res) => {
     console.log("Login");

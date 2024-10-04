@@ -15,7 +15,6 @@ import kid_banner from './components/Assets/banner_kids.png';
 import Profile from './components/Profile/Profile';
 
 
-
 function App() {
   return (
     <div>
@@ -27,8 +26,7 @@ function App() {
 <Route exact path="/mens" element={<ShopCategory banner={men_banner} category="mens" />} />
   <Route exact path="/womens" element={<ShopCategory banner={women_banner} category="womens" />} />
   <Route exact path="/kids" element={<ShopCategory banner={kid_banner} category="kid" />} /> 
-  <Route exact path="/product" element={<Product />} />
-  <Route exact path="/productid" element={<Product />} />
+  <Route exact path="/product/:productId" element={<Product />} />
   <Route exact path="/cart" element={<Cart />} />
   <Route exact path="/gothrift" element={<Gothrift />} />
   <Route exact path="/sellerscorner" element={<SellersCorner />} />

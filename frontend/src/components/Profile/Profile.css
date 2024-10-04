@@ -1,50 +1,83 @@
+/* Profile Page Container */
 .profile-container {
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    min-height: 80vh;
-    background-color: #f9f9f9;
-  }
-  
-  .profile-card {
-    background-color: white;
-    border-radius: 10px;
-    padding: 40px;
-    width: 350px;
-    box-shadow: 0px 0px 15px rgba(0, 0, 0, 0.1);
-    text-align: center;
-  }
-  
-  .profile-image {
-    width: 120px;
-    height: 120px;
-    border-radius: 50%;
-    object-fit: cover;
-    margin-bottom: 20px;
-  }
-  
-  h1 {
-    font-size: 24px;
-    color: #333;
-  }
-  
-  p {
-    font-size: 16px;
-    color: #555;
-    margin: 10px 0;
-  }
-  
-  .edit-profile-btn {
-    margin-top: 20px;
-    padding: 10px 20px;
-    background-color: #007bff;
-    color: white;
-    border: none;
-    border-radius: 5px;
-    cursor: pointer;
-  }
-  
-  .edit-profile-btn:hover {
-    background-color: #0056b3;
-  }
-  
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  min-height: 80vh; /* Takes full viewport height minus some padding */
+  background-color: #f5f7fa;
+  padding: 20px;
+}
+
+/* Profile Card */
+.profile-card {
+  background-color: #fff;
+  border-radius: 15px;
+  padding: 30px;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1); /* Soft shadow */
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  max-width: 500px;
+  width: 100%;
+  transition: transform 0.2s;
+}
+
+.profile-card:hover {
+  transform: translateY(-10px); /* Lift on hover */
+}
+
+/* Profile Image */
+.profile-image {
+  width: 120px;
+  height: 120px;
+  border-radius: 50%;
+  object-fit: cover;
+  border: 4px solid #007bff; /* Blue border */
+  margin-bottom: 20px;
+}
+
+/* Profile Info */
+.profile-info {
+  text-align: center;
+}
+
+.profile-info p {
+  font-size: 18px;
+  font-weight: 500;
+  margin: 10px 0;
+  color: #333;
+}
+
+/* Profile Info Titles */
+.profile-info strong {
+  color: #007bff; /* Blue text for labels */
+}
+
+/* Profile Title */
+h2 {
+  font-size: 32px;
+  margin-bottom: 30px;
+  color: #333;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  padding-bottom: 10px;
+}
+
+/* Button (Optional for future usage) */
+.button {
+  background-color: #007bff;
+  color: white;
+  padding: 10px 20px;
+  border-radius: 25px;
+  border: none;
+  cursor: pointer;
+  font-size: 16px;
+  transition: background-color 0.3s ease-in-out;
+  margin-top: 20px;
+}
+
+.button:hover {
+  background-color: #0056b3; /* Darker blue on hover */
+}

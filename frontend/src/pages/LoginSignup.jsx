@@ -186,6 +186,13 @@ const LoginSignup = () => {
           />
           {errors.password && <p className="error-message">{errors.password}</p>}
         </div>
+         {/* Forgot Password Link */}
+         {state === "Login" && (
+            <p className="forgot-password">
+              <a href="/forgot-password">Forgot Password?</a>
+            </p>
+          )}
+          
 
         <button onClick={() => (state === "Login" ? login() : signup())}>Continue</button>
         
