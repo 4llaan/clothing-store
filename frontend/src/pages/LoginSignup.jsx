@@ -19,7 +19,6 @@ const LoginSignup = () => {
         setErrors((prevErrors) => ({ ...prevErrors, username: "" }));
       }
     }
-
     if (e.target.name === "email") {
       const emailPattern = /^[^\s@]+@[^\s@]+\.[^\s@]+$/; // Basic email pattern
       if (!e.target.value.trim()) {
