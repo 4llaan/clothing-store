@@ -1,0 +1,197 @@
+/* General Styles */
+.loginsignup {
+    width: 100%;
+    min-height: 90vh;
+    background: #fce3fe;
+    padding-top: 100px;
+}
+
+.loginsignup-container {
+    width: 90%;
+    max-width: 550px;
+    background: white;
+    margin: auto;
+    padding: 30px 40px;
+    box-sizing: border-box;
+}
+
+.loginsignup-container h1 {
+    margin: 15px 0px;
+}
+
+.loginsignup-fields {
+    display: flex;
+    flex-direction: column;
+    gap: 25px;
+    margin-top: 20px;
+}
+
+.loginsignup-fields input {
+    height: 60px;
+    width: 100%;
+    padding-left: 20px;
+    border: 1px solid #c9c9c9;
+    outline: none;
+    color: #5c5c5c;
+    font-size: 18px;
+    box-sizing: border-box;
+    transition: border 0.3s ease, background-color 0.3s ease;
+}
+
+/* Error message styling */
+.error-message {
+    color: #e74c3c; /* Red color for error messages */
+    font-size: 12px; /* Smaller font size for error messages */
+    margin-top: 5px; /* Space between input and error message */
+    padding-left: 10px; /* Padding for alignment with input */
+}
+
+/* Error styling for input fields */
+.error-input {
+    border: 2px solid #e74c3c; /* Red border for inputs with errors */
+    background-color: #fdecea; /* Light red background for visibility */
+    color: #e74c3c; /* Red text in the input field */
+}
+
+/* Hover and Focus styling to ensure consistency in error state */
+.error-input:focus {
+    outline: none;
+    border-color: #e74c3c; /* Keep red border on focus */
+    background-color: #fdecea; /* Maintain background color */
+    box-shadow: none;
+}
+
+/* Positioning of the error message */
+input.error-input + .error-message {
+    display: block;
+    margin-top: -15px; /* Adjust positioning if needed */
+}
+/* Success Message */
+.success-message {
+    color: green;
+    font-size: 16px;
+    margin-bottom: 15px;
+  }
+  
+  .forgot-password {
+    text-align: right;
+    margin-top: 5px;
+    margin-bottom: 10px;
+  }
+  
+  .forgot-password a {
+    color: #007BFF; /* Change to your desired link color */
+    text-decoration: none;
+    font-size: 14px;
+    font-weight: 500;
+    transition: color 0.3s ease;
+  }
+  
+  .forgot-password a:hover {
+    color: #0056b3; /* Slightly darker color on hover */
+    text-decoration: underline;
+  }
+
+  
+
+
+.loginsignup-forgot span {
+    color: #ff4141;
+    font-weight: 600;
+    cursor: pointer;
+}
+
+.loginsignup-forgot span:hover {
+    text-decoration: underline;
+}
+
+/* Buttons */
+.loginsignup-container button {
+    width: 100%;
+    height: 60px;
+    color: white;
+    background: #ff4141;
+    margin-top: 30px;
+    border: none;
+    font-size: 22px;
+    font-weight: 500;
+    cursor: pointer;
+}
+
+/* Google Login Button */
+.loginsignup-google-container {
+    margin-top: 20px;
+    text-align: center;
+}
+
+.loginsignup-google-btn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 100%;
+    height: 60px;
+    border: 1px solid #c9c9c9;
+    background-color: #ffffff;
+    cursor: pointer;
+    font-size: 18px;
+    font-weight: 500;
+    color: #5c5c5c;
+}
+
+.loginsignup-google-btn img {
+    width: 24px;
+    margin-right: 10px;
+}
+
+/* Login / Signup Switcher */
+.loginsignup-login {
+    margin-top: 20px;
+    color: #5c5c5c;
+    font-size: 16px;
+    font-weight: 500;
+}
+
+.loginsignup-login span {
+    color: #ff4141;
+    font-weight: 600;
+    cursor: pointer;
+}
+
+.loginsignup-login span:hover {
+    text-decoration: underline;
+}
+
+/* Terms Agreement */
+.loginsignup-agree {
+    display: flex;
+    align-items: center;
+    margin-top: 18px;
+    gap: 10px;
+    color: #5c5c5c;
+    font-size: 15px;
+    font-weight: 500;
+}
+
+/* Mobile Styles */
+@media(max-width: 600px) {
+    .loginsignup-container h1 {
+        font-size: 22px;
+        margin: 0px;
+    }
+    .loginsignup-container {
+        padding: 30px 20px;
+    }
+    .loginsignup-fields input {
+        padding-left: 10px;
+        font-size: 16px;
+        height: 50px;
+    }
+    .loginsignup-fields {
+        gap: 15px;
+    }
+    .loginsignup-container button {
+        height: 50px;
+        margin-top: 20px;
+        font-size: 17px;
+    }
+}
