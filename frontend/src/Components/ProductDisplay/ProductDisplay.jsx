@@ -19,7 +19,7 @@ const ProductDisplay = ({product}) => {
           <img src={backend_url + product.image} alt="img" />
         </div>
         <div className="productdisplay-img">
-          <img className="productdisplay-main-img" src={b} alt="img" />
+          <img className="productdisplay-main-img" src={backend_url + product.image} alt="img" />
         </div>
       </div>
       <div className="productdisplay-right">
