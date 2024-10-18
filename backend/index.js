@@ -8,6 +8,9 @@ const cors = require("cors");
 const bcrypt = require("bcrypt");
 const { body, validationResult } = require("express-validator");
 const rateLimit = require("express-rate-limit");
+const nodemailer = require('nodemailer'); // for sending OTPs
+const crypto = require('crypto'); // for generating OTPs
+
 
 const port = process.env.PORT || 4000;
 
@@ -96,51 +99,72 @@ app.get("/", (req, res) => {
   res.send("Root");
 });
 
-// User Login Endpoint
+// User Login Endpoint with Secure Password Comparison
 app.post('/login', async (req, res) => {
-  let success = false;
-  let user = await Users.findOne({ email: req.body.email });
+  try {
+    let success = false;
+    let user = await Users.findOne({ email: req.body.email });
 
-  if (user) {
-    if (!user.active) {
-      return res.status(403).json({ success: success, errors: "Your account has been blocked." });
-    }
+    if (user) {
+      if (!user.active) {
+        return res.status(403).json({ success: false, errors: "Your account has been blocked." });
+      }
 
-    const passCompare = req.body.password === user.password;
-    if (passCompare) {
-      const data = { user: { id: user.id } };
-      success = true;
-      const token = jwt.sign(data, 'secret_ecom');
-      res.json({ success, token });
+      // Compare the entered password with the hashed password in the database
+      const passCompare = await bcrypt.compare(req.body.password, user.password);
+      if (passCompare) {
+        const data = { user: { id: user.id } };
+        success = true;
+        const token = jwt.sign(data, 'secret_ecom');  // Sign JWT token
+        res.json({ success, token });
+      } else {
+        return res.status(400).json({ success: false, errors: "Incorrect email or password" });
+      }
     } else {
-      return res.status(400).json({ success: success, errors: "Incorrect email or password" });
+      return res.status(400).json({ success: false, errors: "Incorrect email or password" });
     }
-  } else {
-    return res.status(400).json({ success: success, errors: "Incorrect email or password" });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ success: false, errors: "Server error" });
   }
 });
 
-// User Signup Endpoint
-app.post('/signup', async (req, res) => {
-  let check = await Users.findOne({ email: req.body.email });
-  if (check) {
-    return res.status(400).json({ success: false, errors: "User with this email already exists" });
-  }
-  let cart = {};
-  for (let i = 0; i < 300; i++) {
-    cart[i] = 0;
-  }
-  const user = new Users({
-    name: req.body.username,
-    email: req.body.email,
-    password: req.body.password,
-    cartData: cart,
-  });
 
-  await user.save();
-  const data = { user: { id: user.id } };
-  const token = jwt.sign(data, 'secret_ecom');
-  res.json({ success: true, token });
+// User Signup Endpoint with Password Hashing
+app.post('/signup', async (req, res) => {
+  try {
+    let check = await Users.findOne({ email: req.body.email });
+    if (check) {
+      return res.status(400).json({ success: false, errors: "User with this email already exists" });
+    }
+
+    // Hashing the password before saving
+    const salt = await bcrypt.genSalt(10);  // Generate salt for hashing
+    const hashedPassword = await bcrypt.hash(req.body.password, salt);  // Hash the password
+
+    // Create default cart data
+    let cart = {};
+    for (let i = 0; i < 300; i++) {
+      cart[i] = 0;
+    }
+
+    // Create the new user with the hashed password
+    const user = new Users({
+      name: req.body.username,
+      email: req.body.email,
+      password: hashedPassword,  // Store the hashed password
+      cartData: cart,
+    });
+
+    // Save the user
+    await user.save();
+    const data = { user: { id: user.id } };
+    const token = jwt.sign(data, 'secret_ecom');  // Sign JWT token
+    res.json({ success: true, token });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ success: false, errors: "Server error" });
+  }
 });
 
 // Endpoint for getting all products data
@@ -257,7 +281,7 @@ app.post("/toggleuser", async (req, res) => {
     if (user) {
       user.active = !user.active;
       await user.save();
-      res.json({ success: true, message: `User ${user.name} status updated to ${user.active ? 'Active' : 'Inactive'}` });
+      res.json({ success: true, message: `User ${user.name} status updated to ${useotr.active ? 'Active' : 'Inactive'}` });
     } else {
       res.status(404).json({ success: false, message: "User not found" });
     }
@@ -265,6 +289,170 @@ app.post("/toggleuser", async (req, res) => {
     res.status(500).json({ success: false, message: "Error toggling user status", error });
   }
 });
+
+
+// Fetch User Profile Endpoint
+app.get("/api/profile", fetchuser, async (req, res) => {
+  try {
+    const user = await Users.findById(req.user.id).select("-password");  // Exclude password
+    if (!user) {
+      return res.status(404).json({ message: "User not found" });
+    }
+    res.json(user);
+  } catch (error) {
+    res.status(500).json({ message: "Error fetching profile", error });
+  }
+});
+
+
+
+// Update User Profile Endpoint
+app.post("/api/updateprofile", fetchuser, async (req, res) => {
+  try {
+    const { name, email, profilePic, currentPassword, newPassword } = req.body;
+    
+    // Find the user
+    const user = await Users.findById(req.user.id);
+    if (!user) {
+      return res.status(404).json({ message: "User not found" });
+    }
+
+    // Update user fields
+    user.name = name || user.name;
+    user.email = email || user.email;
+    user.profilePic = profilePic || user.profilePic;
+
+    // If updating password, verify current password and update to new password
+    if (currentPassword && newPassword) {
+      const passwordMatch = await bcrypt.compare(currentPassword, user.password);
+      if (!passwordMatch) {
+        return res.status(400).json({ message: "Current password is incorrect" });
+      }
+      const salt = await bcrypt.genSalt(10);
+      user.password = await bcrypt.hash(newPassword, salt);  // Hash the new password
+    }
+
+    // Save updated user
+    await user.save();
+    res.json({ message: "Profile updated successfully", user });
+  } catch (error) {
+    res.status(500).json({ message: "Error updating profile", error });
+  }
+});
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+// OTP Management
+let OTPs = {};  // To store OTPs temporarily
+const OTP_EXPIRY_TIME = 300000; // 5 minutes in milliseconds
+
+// Configure nodemailer with your credentials
+const transporter = nodemailer.createTransport({
+  service: 'gmail',
+  auth: {
+    user: 'sarunsaji2025@mca.ajce.in',  // Replace with your email
+    pass: 'gvdt nhte wird nrqu',  // Replace with your app-specific password
+  },
+});
+
+// Send OTP
+app.post('/send-otp', async (req, res) => {
+  const { email } = req.body;
+  const user = await Users.findOne({ email });
+
+  if (!user) {
+    return res.status(404).json({ message: "Email does not exist" });
+  }
+
+  // Generate a 6-digit OTP
+  const otp = crypto.randomInt(100000, 999999).toString();
+
+  // Store OTP in memory with an expiry time
+  OTPs[email] = {
+    otp,
+    expiresAt: Date.now() + OTP_EXPIRY_TIME,
+  };
+
+  // Send the OTP via email
+  const mailOptions = {
+    from: 'sarunsaji2025@mca.ajce.in',  // Sender email address
+    to: email,  // Receiver email address
+    subject: 'Your OTP for Email Verification',
+    text: `Your OTP is: ${otp}. It is valid for 5 minutes.`,
+  };
+
+  transporter.sendMail(mailOptions, (error, info) => {
+    if (error) {
+      console.log(error);
+      return res.status(500).json({ message: 'Failed to send OTP. Please try again.' });
+    }
+    res.json({ message: 'OTP sent successfully' });
+  });
+});
+
+// Verify OTP
+app.post('/verify-otp', (req, res) => {
+  const { email, otp } = req.body;
+
+  const storedOTP = OTPs[email];
+  if (!storedOTP) {
+    return res.status(400).json({ message: 'OTP not found. Please request a new OTP.' });
+  }
+
+  if (storedOTP.expiresAt < Date.now()) {
+    return res.status(400).json({ message: 'OTP has expired. Please request a new OTP.' });
+  }
+
+  if (storedOTP.otp === otp) {
+    // OTP is correct
+    delete OTPs[email];  // Delete OTP after successful verification
+    return res.json({ message: 'OTP verified successfully' });
+  } else {
+    // OTP is incorrect
+    return res.status(400).json({ message: 'Incorrect OTP. Please try again.' });
+  }
+});
+
+// Reset Password
+app.post('/reset-password', async (req, res) => {
+  const { email, password } = req.body;
+  const hashedPassword = await bcrypt.hash(password, 10);
+
+  await Users.updateOne({ email }, { password: hashedPassword });
+
+  // Remove OTP from memory
+  delete OTPs[email];
+
+  res.status(200).json({ message: "Password reset successfully" });
+});
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 

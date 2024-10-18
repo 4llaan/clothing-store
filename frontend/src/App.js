@@ -10,6 +10,9 @@ import men_banner from "./Components/Assets/banner_mens.png";
 import kid_banner from "./Components/Assets/banner_kids.png";
 import LoginSignup from "./Pages/LoginSignup";
 import Profile from './Components/Profile/Profile';
+import ForgotPassword from './Pages/ForgotPassword'; // Import the ForgotPassword component
+import OtpModal from "./Pages/otpverifier";
+
 
 export const backend_url = 'http://localhost:4000';
 export const currency = '₹';
@@ -20,7 +23,7 @@ function App() {
     <div>
       <Router>
         <Navbar />
-        <Routes>
+        <Routes>  
           <Route path="/" element={<Shop gender="all" />} />
           <Route path="/mens" element={<ShopCategory banner={men_banner} category="men" />} />
           <Route path="/womens" element={<ShopCategory banner={women_banner} category="women" />} />
@@ -29,8 +32,11 @@ function App() {
             <Route path=':productId' element={<Product />} />
           </Route>
           <Route path="/cart" element={<Cart />} />
-          <Route path="/login" element={<LoginSignup/>} />
+          <Route path="/login" element={<LoginSignup/>} />  
           <Route exact path="/profile" element={<Profile />} />
+          <Route path="/forgot-password" element={<ForgotPassword />} />  {/* Forgot password route */}
+          <Route path="/otp-verification" element={<OtpModal />} />  {/* OTP verification route */}
+
 
         </Routes>
         <Footer />

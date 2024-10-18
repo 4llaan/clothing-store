@@ -44,7 +44,16 @@ const ListUsers = () => {
               <p>{user.name}</p>
               <p>{user.email}</p>
               <p>{user.active ? "Active" : "Inactive"}</p>
-              <button onClick={() => toggleUserStatus(user._id)}>
+              <button 
+                onClick={() => toggleUserStatus(user._id)} 
+                style={{
+                  backgroundColor: user.active ? "green" : "red",  // Green for active, red for inactive
+                  color: "white",  // Make text white for contrast
+                  border: "none",
+                  padding: "5px 10px",
+                  cursor: "pointer",
+                }}
+              >
                 {user.active ? "Deactivate" : "Activate"}
               </button>
             </div>
