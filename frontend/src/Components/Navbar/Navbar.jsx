@@ -2,32 +2,32 @@ import React, { useState, useEffect, useContext } from 'react';
 import './Navbar.css';
 import logo from '../Assets/logo.png';
 import cart_icon from '../Assets/cart_icon.png';
-import default_profile from '../Assets/default_profile.png'
-import { Link, useNavigate } from 'react-router-dom'; // Added useNavigate
-import { ShopContext } from '../../Context/ShopContext'
+import default_profile from '../Assets/default_profile.png';
+import { Link, useNavigate } from 'react-router-dom';  // Use 'useNavigate' to handle redirection after search
+import { ShopContext } from '../../Context/ShopContext';
 
 const Navbar = () => {
   const [menu, setMenu] = useState('shop');
   const { getTotalCartItems } = useContext(ShopContext);
   const [userProfile, setUserProfile] = useState(null);
-  const [searchQuery, setSearchQuery] = useState(''); // State for search input
-  const navigate = useNavigate(); // Hook to programmatically navigate
+  const [searchQuery, setSearchQuery] = useState(''); // New state for search query
+  const navigate = useNavigate(); // useNavigate hook for navigation
 
   useEffect(() => {
     const fetchUserProfile = async () => {
-      const token = localStorage.getItem('auth-token'); // Retrieve the auth token
+      const token = localStorage.getItem('auth-token');
       if (token) {
         try {
           const response = await fetch('http://localhost:4000/api/profile', {
             method: 'GET',
             headers: {
-              'auth-token': token, // Send the token in the header for authentication
+              'auth-token': token,
             },
           });
 
           if (response.ok) {
             const profileData = await response.json();
-            setUserProfile(profileData); // Update the state with user profile data
+            setUserProfile(profileData);
           } else {
             console.error('Failed to fetch user profile');
           }
@@ -45,10 +45,11 @@ const Navbar = () => {
     window.location.replace("/");
   };
 
-  const handleSearch = (e) => {
-    e.preventDefault(); // Prevent the page from reloading
+  // Function to handle search query submission
+  const handleSearchSubmit = (e) => {
+    e.preventDefault(); // Prevent default form submission behavior
     if (searchQuery.trim()) {
-      navigate(`/search?query=${searchQuery}`); // Navigate to a search results page with the query
+      navigate(`/search?q=${searchQuery}`); // Redirect to the search results page with the query
     }
   };
 
@@ -70,17 +71,19 @@ const Navbar = () => {
         <li onClick={() => setMenu('GO THRIFT')}><Link to='/gothrift' style={{ textDecoration: 'none' }}>GO THRIFT</Link> {menu === 'GO THRIFT' && <hr />}</li>
       </ul>
 
-      {/* Search Bar Section */}
-      <form className="nav-search" onSubmit={handleSearch}>
-        <input
-          type="text"
-          placeholder="Search products..."
-          value={searchQuery}
-          onChange={(e) => setSearchQuery(e.target.value)} // Update state when typing
-          className="nav-search-input"
-        />
-        <button type="submit" className="nav-search-button">Search</button>
-      </form>
+      {/* Search Bar */}
+      <div className="nav-search">
+        <form onSubmit={handleSearchSubmit}>
+          <input
+            type="text"
+            className="nav-search-input"
+            placeholder="Search products..."
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)} // Update search query state
+          />
+          <button className="nav-search-button" type="submit">Search</button>
+        </form>
+      </div>
 
       <div className="nav-login-cart">
         {localStorage.getItem('auth-token') ? (
@@ -90,7 +93,7 @@ const Navbar = () => {
                 <img src={userProfile?.profilePic || default_profile} alt="Profile" className="profile-img" />
               </Link>
               <div className="profile-info">
-                <p>welcome,{userProfile?.name || "User"}</p> {/* Display the user's name */}
+                <p>welcome, {userProfile?.name || "User"}</p>
                 <button onClick={handleLogout}>Logout</button>
               </div>
             </div>

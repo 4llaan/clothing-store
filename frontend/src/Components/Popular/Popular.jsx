@@ -1,6 +1,6 @@
-import React from 'react'
-import './Popular.css'
-import Item from '../Item/Item'
+import React from 'react';
+import './Popular.css';
+import Item from '../Item/Item';
 
 const Popular = (props) => {
   return (
@@ -8,12 +8,21 @@ const Popular = (props) => {
       <h1>POPULAR IN WOMEN</h1>
       <hr />
       <div className="popular-item">
-        {props.data.map((item,index)=>{
-            return <Item id={item.id} key={index} name={item.name} image={item.image}  new_price={item.new_price} old_price={item.old_price}/>
+        {props.data.map((item, index) => {
+          return (
+            <Item
+              id={item._id}  // Use _id if that's the correct unique identifier
+              key={index}
+              name={item.name}
+              image={item.image}
+              new_price={item.new_price}
+              old_price={item.old_price}
+            />
+          );
         })}
       </div>
     </div>
-  )
-}
+  );
+};
 
-export default Popular
+export default Popular;

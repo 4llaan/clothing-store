@@ -5,20 +5,19 @@ import Cart from "./Pages/Cart";
 import Product from "./Pages/Product";
 import Footer from "./Components/Footer/Footer";
 import ShopCategory from "./Pages/ShopCategory";
+import LoginSignup from "./Pages/LoginSignup";
 import women_banner from "./Components/Assets/banner_women.png";
 import men_banner from "./Components/Assets/banner_mens.png";
 import kid_banner from "./Components/Assets/banner_kids.png";
-import LoginSignup from "./Pages/LoginSignup";
 import Profile from './Components/Profile/Profile';
 import ForgotPassword from './Pages/ForgotPassword'; // Import the ForgotPassword component
 import OtpModal from "./Pages/otpverifier";
-
+import SearchResults from './Components/SearchResults/SearchResults'; // Import SearchResults component
 
 export const backend_url = 'http://localhost:4000';
 export const currency = '₹';
 
 function App() {
-
   return (
     <div>
       <Router>
@@ -28,16 +27,14 @@ function App() {
           <Route path="/mens" element={<ShopCategory banner={men_banner} category="men" />} />
           <Route path="/womens" element={<ShopCategory banner={women_banner} category="women" />} />
           <Route path="/kids" element={<ShopCategory banner={kid_banner} category="kid" />} />
-          <Route path='/product' element={<Product />}>
-            <Route path=':productId' element={<Product />} />
-          </Route>
+
+          <Route path="/search" element={<SearchResults />} /> {/* Add this route for search results */}
+          <Route path="/product/:productId" element={<Product />} /> {/* Ensure this path matches */}
           <Route path="/cart" element={<Cart />} />
           <Route path="/login" element={<LoginSignup/>} />  
-          <Route exact path="/profile" element={<Profile />} />
-          <Route path="/forgot-password" element={<ForgotPassword />} />  {/* Forgot password route */}
-          <Route path="/otp-verification" element={<OtpModal />} />  {/* OTP verification route */}
-
-
+          <Route path="/profile" element={<Profile />} />
+          <Route path="/forgot-password" element={<ForgotPassword />} />
+          <Route path="/otp-verification" element={<OtpModal />} />
         </Routes>
         <Footer />
       </Router>

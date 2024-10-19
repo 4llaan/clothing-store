@@ -341,6 +341,35 @@ app.post("/api/updateprofile", fetchuser, async (req, res) => {
 });
 
 
+// Search products by name, description, or category
+app.get("/search", async (req, res) => {
+  const { query } = req.query;
+
+  if (!query) {
+    return res.status(400).json({ success: false, message: "Search query is required" });
+  }
+
+  try {
+    // Use regex to match the query in name, description, or category fields
+    const searchResults = await Product.find({
+      $or: [
+        { name: { $regex: query, $options: "i" } },  // Case-insensitive search in name
+        { description: { $regex: query, $options: "i" } },  // Case-insensitive search in description
+        { category: { $regex: query, $options: "i" } }  // Case-insensitive search in category
+      ]
+    });
+
+    res.json({ success: true, results: searchResults });
+  } catch (error) {
+    console.error("Error during search:", error);
+    res.status(500).json({ success: false, message: "Error while searching" });
+  }
+});
+
+
+
+
+
 
 
 

@@ -1,0 +1,60 @@
+.search-results {
+    padding: 20px;
+    max-width: 1200px;
+    margin: 0 auto;
+  }
+  
+  .search-results h2 {
+    font-size: 24px;
+    margin-bottom: 20px;
+  }
+  
+  .search-results-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 20px;
+  }
+  
+  .search-result-item {
+    background: #fff;
+    border: 1px solid #ddd;
+    padding: 20px;
+    text-align: center;
+    transition: transform 0.3s;
+  }
+  
+  .search-result-item:hover {
+    transform: scale(1.05);
+  }
+  
+  .search-product-image {
+    max-width: 100%;
+    height: auto;
+  }
+  
+  .search-result-item h3 {
+    font-size: 18px;
+    margin: 10px 0;
+  }
+  
+  .search-result-item p {
+    font-size: 16px;
+    color: #333;
+  }
+  
+  .search-product-prices {
+    display: flex;
+    align-items: center;
+  }
+  
+  .search-product-price-new {
+    font-weight: bold;
+    color: #e74c3c; /* Example color for the new price */
+    margin-right: 10px;
+  }
+  
+  .search-product-price-old {
+    text-decoration: line-through;
+    color: #7f8c8d; /* Example color for the old price */
+  }
+  
