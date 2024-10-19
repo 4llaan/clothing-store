@@ -3,13 +3,15 @@ import './Navbar.css';
 import logo from '../Assets/logo.png';
 import cart_icon from '../Assets/cart_icon.png';
 import default_profile from '../Assets/default_profile.png'
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom'; // Added useNavigate
 import { ShopContext } from '../../Context/ShopContext'
 
 const Navbar = () => {
   const [menu, setMenu] = useState('shop');
-  const {getTotalCartItems}=useContext(ShopContext);
+  const { getTotalCartItems } = useContext(ShopContext);
   const [userProfile, setUserProfile] = useState(null);
+  const [searchQuery, setSearchQuery] = useState(''); // State for search input
+  const navigate = useNavigate(); // Hook to programmatically navigate
 
   useEffect(() => {
     const fetchUserProfile = async () => {
@@ -43,6 +45,13 @@ const Navbar = () => {
     window.location.replace("/");
   };
 
+  const handleSearch = (e) => {
+    e.preventDefault(); // Prevent the page from reloading
+    if (searchQuery.trim()) {
+      navigate(`/search?query=${searchQuery}`); // Navigate to a search results page with the query
+    }
+  };
+
   return (
     <div className='navbar'>
       <div className='nav-logo'>
@@ -60,7 +69,19 @@ const Navbar = () => {
         <li onClick={() => setMenu('SELLERS CORNER')}><Link to='/sellerscorner' style={{ textDecoration: 'none' }}>SELLERS CORNER</Link> {menu === 'SELLERS CORNER' && <hr />}</li>
         <li onClick={() => setMenu('GO THRIFT')}><Link to='/gothrift' style={{ textDecoration: 'none' }}>GO THRIFT</Link> {menu === 'GO THRIFT' && <hr />}</li>
       </ul>
-      
+
+      {/* Search Bar Section */}
+      <form className="nav-search" onSubmit={handleSearch}>
+        <input
+          type="text"
+          placeholder="Search products..."
+          value={searchQuery}
+          onChange={(e) => setSearchQuery(e.target.value)} // Update state when typing
+          className="nav-search-input"
+        />
+        <button type="submit" className="nav-search-button">Search</button>
+      </form>
+
       <div className="nav-login-cart">
         {localStorage.getItem('auth-token') ? (
           <>
