@@ -13,6 +13,12 @@ import Profile from './Components/Profile/Profile';
 import ForgotPassword from './Pages/ForgotPassword'; // Import the ForgotPassword component
 import OtpModal from "./Pages/otpverifier";
 import SearchResults from './Components/SearchResults/SearchResults'; // Import SearchResults component
+import SellersCorner from './Pages/SellersCorner';
+import GoThrift from './Pages/GoThrift';  // Import the GoThrift component
+import SellerForm from './Pages/SelllerForm'  // Import the SellerForm component
+
+
+
 
 export const backend_url = 'http://localhost:4000';
 export const currency = '₹';
@@ -35,6 +41,11 @@ function App() {
           <Route path="/profile" element={<Profile />} />
           <Route path="/forgot-password" element={<ForgotPassword />} />
           <Route path="/otp-verification" element={<OtpModal />} />
+          <Route path="/sellerscorner" element={<SellersCorner />} /> {/* Add this */}
+          <Route path="/gothrift" element={<GoThrift />} /> {/* Add this */}
+          <Route path="/sellerform" element={<SellerForm />} />
+
+
         </Routes>
         <Footer />
       </Router>

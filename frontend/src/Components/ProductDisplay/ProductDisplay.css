@@ -90,72 +90,35 @@
     font-weight: 600;
 }
 
-/* ----- media query------- */
-
-
-@media(max-width:1024px){
-    .productdisplay{
-        padding: 0px 8%;
-    }
-    .productdisplay-img-list{
-        gap: 10px;
-    }
-    .productdisplay-img-list img{
-        height: 90px;
-    }
-    .productdisplay-main-img{
-        height: 400px;
-    }
-    
-}
-@media(max-width:900px){
-    .productdisplay{
-        gap: 20px;
-    }
-    .productdisplay-left{
-        gap: 10px;
-    }
-    .productdisplay-img-list{
-        gap: 10px;
-    }
-    .productdisplay-img-list img{
-        height: 80px;
-    }
-    .productdisplay-main-img{
-        height: 350px;
-    }
-    
-}
-@media(max-width:800px){
-    .productdisplay{
-        flex-wrap: wrap;
-    }
-    .productdisplay-left{
-        width: 100%;
-        justify-content: center;
-    }
-}
-@media(max-width:500px){
-    .productdisplay-right h1 {
-        font-size: 20px;
-    }
-    .productdisplay-right-prices {
-        margin: 15px 0;
-        font-size: 18px;
-    }
-    .productdisplay-right-size h1{
-        margin-top: 15px;
-    }
-    .productdisplay-right-size h1{
-        margin: 10px 0;
-    }
-    .productdisplay-right-size div{
-        font-size: 14px;
-    }
-    .productdisplay-img-list img{
-        height:68px;
-    }
-    .productdisplay-main-img{
-        height: 300px;
-    }
-}
+.productdisplay-buy-now {
+    background-color: #ff6f61; /* Bright color for emphasis */
+    color: #fff;
+    padding: 10px 20px;
+    border: none;
+    border-radius: 5px;
+    font-size: 16px;
+    font-weight: bold;
+    cursor: pointer;
+    margin-bottom: 10px; /* Space between Buy Now and Add to Cart */
+    transition: background-color 0.3s ease;
+  }
+  
+  .productdisplay-buy-now:hover {
+    background-color: #ff4b3a; /* Darker shade on hover */
+  }
+  
+  .size-option {
+    padding: 5px 10px;
+    margin: 5px;
+    cursor: pointer;
+    border: 1px solid #ccc;
+    border-radius: 5px;
+    transition: background-color 0.3s ease;
+  }
+  
+  .size-option.selected {
+    background-color: #ff6f61; /* Color to highlight selected size */
+    color: white;
+    border-color: #ff6f61;
+  }
+  

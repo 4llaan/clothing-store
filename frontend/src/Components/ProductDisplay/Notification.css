@@ -1,0 +1,21 @@
+/* Notification.css */
+.notification {
+    position: fixed;
+    top: 20px;
+    right: 20px;
+    background-color: #28a745; /* Green background */
+    color: white;
+    padding: 20px;
+    border-radius: 5px;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+    z-index: 1000; /* Make sure it appears above other content */
+    transition: opacity 0.5s ease;
+  }
+  .notification button {
+    margin-top: 10px;
+    background: transparent;
+    border: none;
+    color: white;
+    cursor: pointer;
+  }
+  

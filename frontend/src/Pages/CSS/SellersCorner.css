@@ -1,0 +1,101 @@
+/* SellersCorner.css */
+.sellers-corner {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    background-color: #0f809f;
+    color: white;
+    padding: 50px 20px;
+    height: 100vh;
+    text-align: center;
+  }
+  
+  .sellers-corner-header h1 {
+    font-size: 36px;
+    font-weight: bold;
+    margin-bottom: 20px;
+  }
+  
+  .sellers-corner-header p {
+    font-size: 18px;
+    margin-bottom: 30px;
+  }
+  
+  .sellers-corner-buttons {
+    display: flex;
+    gap: 20px;
+    margin-bottom: 40px;
+  }
+  
+  .btn {
+    padding: 10px 20px;
+    font-size: 16px;
+    font-weight: bold;
+    border-radius: 5px;
+    text-decoration: none;
+  }
+  
+  .login-btn {
+    background-color: transparent;
+    border: 1px solid white;
+    color: white;
+  }
+  
+  .start-selling-btn {
+    background-color: #ff9900;
+    border: none;
+    color: white;
+  }
+  
+  .know-more-btn {
+    background-color: white;
+    border: none;
+    color: black;
+  }
+  
+  .seller-hero-img {
+    width: 350px;
+    border-radius: 50%;
+    margin-top: 40px;
+  }
+  
+  .sellers-corner-footer {
+    margin-top: 20px;
+  }
+  
+  .sellers-corner-footer a {
+    color: white;
+    text-decoration: underline;
+    font-size: 14px;
+  }
+  .sellers-corner-footer {
+    margin-top: 20px;
+    padding: 20px;
+    background-color: rgba(255, 255, 255, 0.1); /* Adds a slight background contrast */
+    border-radius: 10px;
+    width: 100%;
+    max-width: 800px;
+    text-align: center;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1); /* Adds subtle shadow for emphasis */
+}
+
+.sellers-corner-footer a {
+    color: #ffdd57; /* Brighter color to make it stand out */
+    text-decoration: none; /* Remove underline by default */
+    font-size: 16px;
+    font-weight: bold;
+    transition: color 0.3s ease; /* Smooth transition effect */
+}
+
+.sellers-corner-footer a:hover {
+    color: #fff; /* Changes to white on hover for contrast */
+    text-decoration: underline; /* Underline on hover */
+}
+
+/* Adding subtle spacing for readability */
+.sellers-corner-footer p {
+    font-size: 14px;
+    color: #f0f0f0; /* Slightly muted text color */
+    line-height: 1.6;
+}

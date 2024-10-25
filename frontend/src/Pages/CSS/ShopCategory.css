@@ -68,3 +68,95 @@
         font-size: 13px;
     }
 }
+
+/* Container for sorting controls */
+.shopcategory-indexSort {
+    display: flex;
+    align-items: center;
+    padding: 10px;
+    background-color: #ffffff;
+    border-bottom: 1px solid #ddd;
+    color: #333;
+    font-size: 16px;
+  }
+  
+  /* Styling for subcategory and price sort sections */
+  .shopcategory-sort,
+  .shopcategory-price-sort {
+    display: flex;
+    align-items: center;
+    margin-right: 15px;
+    color: #555;
+  }
+  
+  /* Sort label text */
+  .shopcategory-sort label,
+  .shopcategory-price-sort label {
+    font-weight: 500;
+    margin-right: 55px;
+  }
+  
+  /* Shared styles for both dropdowns */
+  .shopcategory-dropdown {
+    padding: 6px 10px;
+    background-color: #f0f0f0;
+    border: 1px solid #ccc;
+    border-radius: 5px;
+    color: #333;
+    font-size: 14px;
+    cursor: pointer;
+  }
+  
+  /* Hover effect for dropdown */
+  .shopcategory-dropdown:hover {
+    background-color: #e6e6e6;
+  }
+  
+  /* Container for sorting controls */
+.shopcategory-indexSort {
+    display: flex;
+    align-items: center;
+    padding: 10px;
+    background-color: #ffffff; /* White background */
+    border-bottom: 1px solid #ddd; /* Light border for separation */
+    color: #333; /* Default text color */
+    font-size: 16px; /* Font size */
+  }
+  
+  /* Styling for subcategory and price sort sections */
+  .shopcategory-sort,
+  .shopcategory-price-sort {
+    display: flex;
+    align-items: center;
+    margin-right: 15px; /* Space between sorting sections */
+    color: #ff8c00; /* Orange color for labels */
+  }
+  
+  /* Sort label text */
+  .shopcategory-sort label,
+  .shopcategory-price-sort label {
+    font-weight: 500; /* Boldness of the label */
+    margin-right: 8px; /* Space between label and dropdown */
+  }
+  
+  /* Shared styles for both dropdowns */
+  .shopcategory-dropdown {
+    padding: 6px 10px; /* Padding for dropdown */
+    background-color: #f8f9fa; /* Light gray background for dropdown */
+    border: 1px solid #ced4da; /* Gray border */
+    border-radius: 5px; /* Rounded corners */
+    color: #212529; /* Very dark gray for dropdown text */
+    font-size: 14px; /* Font size for dropdown */
+    cursor: pointer; /* Pointer on hover */
+  }
+  
+  /* Hover effect for dropdown */
+  .shopcategory-dropdown:hover {
+    background-color: #e2e6ea; /* Slightly darker gray on hover */
+  }
+  
+  /* Change border color on hover */
+  .shopcategory-dropdown:hover {
+    border-color: #ff8c00; /* Orange border on hover */
+  }
+  

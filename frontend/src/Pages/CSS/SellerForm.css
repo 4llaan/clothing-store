@@ -1,0 +1,39 @@
+.seller-form-container {
+    max-width: 600px;
+    margin: 0 auto;
+    padding: 20px;
+    background-color: #f9f9f9;
+    border-radius: 10px;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+  }
+  
+  .seller-form {
+    display: flex;
+    flex-direction: column;
+  }
+  
+  .seller-form label {
+    font-weight: bold;
+    margin-bottom: 5px;
+  }
+  
+  .seller-form input, .seller-form textarea {
+    padding: 10px;
+    margin-bottom: 15px;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+  }
+  
+  .submit-btn {
+    background-color: #0f809f;
+    color: white;
+    padding: 10px 15px;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+  }
+  
+  .submit-btn:hover {
+    background-color: #0c657a;
+  }
+  

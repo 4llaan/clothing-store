@@ -10,15 +10,23 @@ const AddProduct = () => {
     description: "",
     image: "",
     category: "women",
+    subcategory: "", // New state for subcategory
     new_price: "",
     old_price: "",
   });
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
 
+  // Subcategory options for men, women, and kids
+  const subcategories = {
+    women: ["T-Shirt", "Top", "Bottoms", "Jeans", "Hoodies"],
+    men: ["T-Shirt", "Bottoms", "Jeans", "Hoodies"],
+    kid: ["T-Shirt", "Shorts", "Jeans", "Jackets"], // Add subcategory for kids
+  };
+
   const validateForm = () => {
     // Basic validation
-    if (!productDetails.name || !productDetails.description || !image || !productDetails.new_price || !productDetails.old_price) {
+    if (!productDetails.name || !productDetails.description || !image || !productDetails.new_price || !productDetails.old_price || !productDetails.subcategory) {
       alert("Please fill all fields and upload an image.");
       return false;
     }
@@ -90,6 +98,7 @@ const AddProduct = () => {
             description: "",
             image: "",
             category: "women",
+            subcategory: "", // Clear subcategory
             new_price: "",
             old_price: "",
           });
@@ -166,9 +175,28 @@ const AddProduct = () => {
         >
           <option value="women">Women</option>
           <option value="men">Men</option>
-          <option value="kid">Kid</option>
+          <option value="kid">Kid</option> {/* Added Kid category */}
         </select>
       </div>
+
+      {/* Conditionally render subcategory dropdown for women, men, and kid */}
+      {(productDetails.category === "women" || productDetails.category === "men" || productDetails.category === "kid") && (
+        <div className="addproduct-itemfield">
+          <p>Product subcategory</p>
+          <select
+            value={productDetails.subcategory}
+            name="subcategory"
+            className="add-product-selector"
+            onChange={changeHandler}
+          >
+            <option value="">Select subcategory</option>
+            {subcategories[productDetails.category].map((subcat, index) => (
+              <option key={index} value={subcat}>{subcat}</option>
+            ))}
+          </select>
+        </div>
+      )}
+
       <div className="addproduct-itemfield">
         <p>Product image</p>
         <label htmlFor="file-input">
