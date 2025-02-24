@@ -1,47 +1,98 @@
-import React, { useContext, useState } from "react";
+import React, { useContext, useState, useEffect } from "react";
+import { useNavigate } from 'react-router-dom'; // Import useNavigate
 import "./ProductDisplay.css";
 import star_icon from "../Assets/star_icon.png";
 import star_dull_icon from "../Assets/star_dull_icon.png";
 import { ShopContext } from "../../Context/ShopContext";
 import { backend_url, currency } from "../../App";
+import { useParams } from 'react-router-dom';
 
-const ProductDisplay = ({ product }) => {
+const ProductDisplay = () => {
   const { addToCart } = useContext(ShopContext);
+  const { productId } = useParams(); // Get the product ID from the URL
+  const [product, setProduct] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
   const [selectedSize, setSelectedSize] = useState(null); // State to track selected size
+  const navigate = useNavigate(); // Initialize useNavigate
+
+  useEffect(() => {
+    const fetchProduct = async () => {
+      try {
+        const response = await fetch(`${backend_url}/product/${productId}`);
+        if (!response.ok) {
+          throw new Error('Product not found');
+        }
+        const data = await response.json();
+        setProduct(data);
+      } catch (err) {
+        setError(err.message);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchProduct();
+  }, [productId]);
 
   const handleSizeSelect = (size) => {
     setSelectedSize(size);
   };
 
   const handleAddToCart = (productId) => {
+    if (!localStorage.getItem("auth-token")) {
+      alert("Please login to add items to cart");
+      navigate('/login');
+      return;
+    }
+
     if (!selectedSize) {
       alert("Please select a size before adding to the cart.");
       return;
     }
-    addToCart(productId, selectedSize); // Pass selected size to the cart
+    addToCart(productId, selectedSize);
     alert("Product added to cart!");
   };
 
-  const handleBuyNow = (productId) => {
+  const handleBuyNow = () => {
+    if (!localStorage.getItem("auth-token")) {
+      alert("Please login to continue");
+      navigate('/login');
+      return;
+    }
+
     if (!selectedSize) {
       alert("Please select a size before buying.");
       return;
     }
-    // Proceed with the buy now logic here, passing selected size if necessary
-    alert("Proceeding to checkout!");
+    
+    navigate('/checkout', { 
+      state: { 
+        productDetails: {
+          id: product._id,
+          name: product.name,
+          image: product.image,
+          price: product.new_price,
+          size: selectedSize,
+          quantity: 1,
+          description: product.description,
+          category: product.category
+        }
+      }
+    });
   };
+
+  if (loading) return <p>Loading...</p>;
+  if (error) return <p>{error}</p>;
 
   return (
     <div className="productdisplay">
       <div className="productdisplay-left">
         <div className="productdisplay-img-list">
-          <img src={backend_url + product.image} alt="img" />
-          <img src={backend_url + product.image} alt="img" />
-          <img src={backend_url + product.image} alt="img" />
-          <img src={backend_url + product.image} alt="img" />
+          <img src={`${backend_url}${product.image}`} alt={product.name} />
         </div>
         <div className="productdisplay-img">
-          <img className="productdisplay-main-img" src={backend_url + product.image} alt="img" />
+          <img className="productdisplay-main-img" src={`${backend_url}${product.image}`} alt={product.name} />
         </div>
       </div>
       <div className="productdisplay-right">
@@ -54,9 +105,18 @@ const ProductDisplay = ({ product }) => {
           <img src={star_dull_icon} alt="" />
           <p>(122)</p>
         </div>
+        <div className="productdisplay-right-category">
+          <span>Category: {product.category}</span>
+          <br />
+          <span>Subcategory: {product.subcategory}</span>
+        </div>
         <div className="productdisplay-right-prices">
-          <div className="productdisplay-right-price-old">{currency}{product.old_price}</div>
-          <div className="productdisplay-right-price-new">{currency}{product.new_price}</div>
+          <div className="productdisplay-right-price-old">
+            {currency}{product.old_price || 0}
+          </div>
+          <div className="productdisplay-right-price-new">
+            {currency}{product.new_price || 0}
+          </div>
         </div>
         <div className="productdisplay-right-description">
           {product.description}
@@ -75,7 +135,7 @@ const ProductDisplay = ({ product }) => {
             ))}
           </div>
         </div>
-        <button className="productdisplay-buy-now" onClick={() => handleBuyNow(product.id)}>BUY NOW</button>
+        <button className="productdisplay-buy-now" onClick={handleBuyNow}>BUY NOW</button>
         <button className="productdisplay-add-to-cart" onClick={() => handleAddToCart(product.id)}>ADD TO CART</button>
         <p className="productdisplay-right-category">
           <span>Category :</span> {product.category} {product.subcategory ? `, ${product.subcategory}` : ""}

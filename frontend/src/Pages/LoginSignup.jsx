@@ -207,7 +207,7 @@ const LoginSignup = () => {
 
         {state === "Login" ? (
           <p className="loginsignup-login">
-            Create an account? <span onClick={() => setState("Sign Up")}>Sign up</span>
+            Create an account? <span onClick={() => setState("Sign Up")}>Register</span>
           </p>
         ) : (
           <p className="loginsignup-login">

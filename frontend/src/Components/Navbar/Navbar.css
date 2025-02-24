@@ -19,7 +19,7 @@
 
 .nav-logo p {
     color: #171717;
-    font-size: 27px;
+    font-size: 25px;
     font-weight: 600;
 }
 
@@ -27,9 +27,9 @@
     display: flex;
     align-items: center;
     list-style: none;
-    gap: 40px;
+    gap: 36px;
     color: #626262;
-    font-size: 16px;
+    font-size: 15.5px;
     font-weight: 500;
 }
 
@@ -55,15 +55,16 @@
     display: flex;
     align-items: center;
     gap: 10px;
+    margin-right: 10px;
 }
 
 .nav-search-input {
-    width: 250px;
-    padding: 8px 12px;
+    width: 230px;
+    padding: 7px 14px;
     border: 1px solid #ccc;
-    border-radius: 5px;
+    border-radius: 4px;
     outline: none;
-    font-size: 16px;
+    font-size: 15.5px;
 }
 
 .nav-search-input::placeholder {
@@ -71,13 +72,13 @@
 }
 
 .nav-search-button {
-    padding: 8px 16px;
+    padding: 7px 14px;
     border: none;
     background-color: #FF4141;
     color: white;
-    border-radius: 5px;
+    border-radius: 4px;
     cursor: pointer;
-    font-size: 16px;
+    font-size: 15.5px;
 }
 
 .nav-search-button:hover {
@@ -109,19 +110,19 @@
 
 .nav-profile p {
     margin: 0;
-    font-size: 14px;
+    font-size: 13.5px;
     font-weight: 500;
     color: black;
 }
 
 .nav-login-cart button {
-    width: 120px;
-    height: 40px;
+    width: 112px;
+    height: 39px;
     outline: none;
     border: 1px solid #7a7a7a;
     border-radius: 75px;
     color: white;
-    font-size: 16px;
+    font-size: 15.5px;
     font-weight: 500;
     background: blue;
     cursor: pointer;
@@ -156,7 +157,7 @@
     }
 
     .nav-menu {
-        gap: 15px;
+        gap: 16px;
     }
 
     .nav-search-input {
@@ -202,6 +203,10 @@
     .nav-cart-count {
         margin-left: -25px;
     }
+
+    .nav-logo p {
+        font-size: 22px;
+    }
 }
 
 @media (max-width: 500px) {
@@ -214,7 +219,7 @@
     }
 
     .nav-logo p {
-        font-size: 18px;
+        font-size: 20px;
     }
 
     .nav-menu-visible {
@@ -230,4 +235,43 @@
     .nav-search-input {
         width: 120px;
     }
+}
+
+/* Add these styles to your existing Navbar.css */
+.nav-orders {
+    margin: 0 20px;
+}
+
+.orders-link {
+    text-decoration: none;
+    color: #ffffff;
+    font-size: 13.5px;
+    font-weight: 500;
+    padding: 7px 14px;
+    border-radius: 4px;
+    transition: all 0.3s ease;
+    background-color: #171717;
+}
+
+.orders-link:hover {
+    background-color: #333333;
+    color: #ffffff;
+}
+
+/* Make navbar more responsive */
+@media screen and (max-width: 1280px) {
+    .nav-orders {
+        margin: 0 10px;
+    }
+}
+
+@media screen and (max-width: 1024px) {
+    .nav-orders {
+        display: none; /* Hide on smaller screens */
+    }
+}
+
+/* Add a subtle shadow for better visibility */
+.orders-link {
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
 }

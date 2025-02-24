@@ -12,7 +12,7 @@ const Product = () => {
   const [product, setProduct] = useState(null);
 
   useEffect(() => {
-    const foundProduct = products.find((item) => item._id === productId); // Make sure to use _id
+    const foundProduct = products.find((item) => item._id === productId); // Ensure you are using _id
     console.log("Found Product:", foundProduct); // Debugging output
     setProduct(foundProduct);
   }, [products, productId]);

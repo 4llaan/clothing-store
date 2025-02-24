@@ -78,12 +78,26 @@ const Navbar = () => {
             type="text"
             className="nav-search-input"
             placeholder="Search products..."
+            id='search'
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)} // Update search query state
           />
-          <button className="nav-search-button" type="submit">Search</button>
+          <button className="nav-search-button" type="submit" id='submit'>Search</button>
         </form>
       </div>
+
+      {/* Add Your Orders link here */}
+      {localStorage.getItem('auth-token') && (
+        <div className="nav-orders">
+          <Link 
+            to="/your-orders" 
+            className="orders-link"
+            onClick={() => setMenu('YOUR ORDERS')}
+          >
+            Your Orders
+          </Link>
+        </div>
+      )}
 
       <div className="nav-login-cart">
         {localStorage.getItem('auth-token') ? (

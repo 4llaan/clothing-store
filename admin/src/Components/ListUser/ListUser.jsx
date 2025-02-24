@@ -3,12 +3,26 @@ import './ListUser.css'
 
 const ListUsers = () => {
   const [allUsers, setAllUsers] = useState([]);
+  const [error, setError] = useState(null);
+  const [loading, setLoading] = useState(true);
 
   // Fetch all users from the backend
-  const fetchUsers = () => {
-    fetch('http://localhost:4000/allusers')
-      .then((res) => res.json())
-      .then((data) => setAllUsers(data));
+  const fetchUsers = async () => {
+    try {
+      setLoading(true);
+      setError(null);
+      const response = await fetch('http://localhost:4000/allusers');
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+      const data = await response.json();
+      setAllUsers(data);
+    } catch (error) {
+      setError('Failed to fetch users. Please check if the server is running.');
+      console.error('Error fetching users:', error);
+    } finally {
+      setLoading(false);
+    }
   };
 
   useEffect(() => {
@@ -16,22 +30,41 @@ const ListUsers = () => {
   }, []);
 
   // Function to toggle the active status
-  const toggleUserStatus = (id) => {
-    fetch('http://localhost:4000/toggleuser', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({ id }),
-    }).then(() => {
-      fetchUsers();  // Refresh users list after toggling
-    });
+  const toggleUserStatus = async (id) => {
+    try {
+      setError(null);
+      const response = await fetch('http://localhost:4000/toggleuser', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ id }),
+      });
+      
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+      
+      await fetchUsers();  // Refresh users list after toggling
+    } catch (error) {
+      setError('Failed to update user status. Please try again.');
+      console.error('Error toggling user status:', error);
+    }
   };
+
+  if (loading) {
+    return <div className="listusers">Loading...</div>;
+  }
 
   return (
     <div className="listusers">
       <h1>All Users List</h1>
-      {allUsers.length === 0 ? (
+      {error && (
+        <div style={{ color: 'red', margin: '10px 0' }}>
+          {error}
+        </div>
+      )}
+      {!error && allUsers.length === 0 ? (
         <p>No users found</p>
       ) : (
         <>

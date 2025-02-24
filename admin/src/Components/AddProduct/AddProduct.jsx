@@ -68,7 +68,13 @@ const AddProduct = () => {
       console.log(dataObj); // Log response from the image upload
 
       if (dataObj.success) {
-        const product = { ...productDetails, image: dataObj.image_url };
+        const product = { 
+          ...productDetails, 
+          image: dataObj.image_url,
+          subcategory: productDetails.subcategory,
+          new_price: Number(productDetails.new_price),
+          old_price: Number(productDetails.old_price)
+        };
 
         // Debugging logs
         console.log("Adding product...");
