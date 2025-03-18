@@ -12,22 +12,24 @@ const Navbar = () => {
   const [userProfile, setUserProfile] = useState(null);
   const [searchQuery, setSearchQuery] = useState(''); // New state for search query
   const navigate = useNavigate(); // useNavigate hook for navigation
+  const backend_url = 'http://localhost:4000';
 
   useEffect(() => {
     const fetchUserProfile = async () => {
       const token = localStorage.getItem('auth-token');
       if (token) {
         try {
-          const response = await fetch('http://localhost:4000/api/profile', {
+          const response = await fetch(`${backend_url}/api/auth/getuser`, {
             method: 'GET',
             headers: {
+              'Content-Type': 'application/json',
               'auth-token': token,
             },
           });
 
           if (response.ok) {
-            const profileData = await response.json();
-            setUserProfile(profileData);
+            const data = await response.json();
+            setUserProfile(data.user);
           } else {
             console.error('Failed to fetch user profile');
           }
@@ -51,6 +53,11 @@ const Navbar = () => {
     if (searchQuery.trim()) {
       navigate(`/search?q=${searchQuery}`); // Redirect to the search results page with the query
     }
+  };
+
+  const getProfileImageUrl = (profilePic) => {
+    if (!profilePic) return default_profile;
+    return `${backend_url}${profilePic}`;
   };
 
   return (
@@ -104,7 +111,15 @@ const Navbar = () => {
           <>
             <div className="nav-profile">
               <Link to="/profile" style={{ textDecoration: 'none' }}>
-                <img src={userProfile?.profilePic || default_profile} alt="Profile" className="profile-img" />
+                <img 
+                  src={getProfileImageUrl(userProfile?.profilePic)}
+                  alt="Profile" 
+                  className="profile-img"
+                  onError={(e) => {
+                    e.target.onerror = null;
+                    e.target.src = default_profile;
+                  }}
+                />
               </Link>
               <div className="profile-info">
                 <p>welcome, {userProfile?.name || "User"}</p>

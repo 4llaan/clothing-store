@@ -12,16 +12,30 @@ const Shop = () => {
 
   const fetchInfo = () => { 
     fetch('http://localhost:4000/popularinwomen') 
-            .then((res) => res.json()) 
-            .then((data) => setPopular(data))
-    fetch('http://localhost:4000/newcollections') 
-            .then((res) => res.json()) 
-            .then((data) => setNewCollection(data))
-    }
+      .then((res) => res.json()) 
+      .then((data) => {
+        // Ensure backward compatibility
+        const processedData = data.map(item => ({
+          ...item,
+          images: item.images || [item.image] // Convert single image to array if needed
+        }));
+        setPopular(processedData);
+      });
 
-    useEffect(() => {
-      fetchInfo();
-    }, [])
+    fetch('http://localhost:4000/newcollections') 
+      .then((res) => res.json()) 
+      .then((data) => {
+        const processedData = data.map(item => ({
+          ...item,
+          images: item.images || [item.image]
+        }));
+        setNewCollection(processedData);
+      });
+  }
+
+  useEffect(() => {
+    fetchInfo();
+  }, [])
 
 
   return (

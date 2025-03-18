@@ -12,19 +12,23 @@ const Product = () => {
   const [product, setProduct] = useState(null);
 
   useEffect(() => {
-    const foundProduct = products.find((item) => item._id === productId); // Ensure you are using _id
-    console.log("Found Product:", foundProduct); // Debugging output
+    window.scrollTo(0, 0); // Scroll to top when product changes
+    const foundProduct = products.find((item) => item._id === productId);
     setProduct(foundProduct);
   }, [products, productId]);
 
-  return product ? (
+  if (!product) {
+    return <div>Loading...</div>;
+  }
+
+  return (
     <div>
       <Breadcrums product={product} />
       <ProductDisplay product={product} />
       <DescriptionBox />
       <RelatedProducts id={product._id} category={product.category} />
     </div>
-  ) : <div>Product not found</div>; // Handle not found case
+  );
 };
 
 export default Product;

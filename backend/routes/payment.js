@@ -15,7 +15,7 @@ const razorpay = new Razorpay({
 
 // Create order
 router.post('/create-order', async (req, res) => {
-  res.header('Access-Control-Allow-Origin', 'http://localhost:3000');
+  res.header('Access-Control-Allow-Origin', '*');
   res.header('Access-Control-Allow-Credentials', 'true');
   res.header('Access-Control-Allow-Headers', 'Content-Type, auth-token, Authorization');
 
@@ -65,15 +65,18 @@ router.post('/save', async (req, res) => {
       paymentId,
       amount,
       products: products.map(product => ({
-        productId: String(product.productId),
+        productId: product.productId.toString(), // Ensure productId is a string
         productTitle: product.productTitle,
         quantity: product.quantity,
         price: product.price,
         subTotal: product.subTotal,
-        image: product.image,
+        images: product.images || [], // Ensure images is always an array
         size: product.size
       }))
     });
+
+    // Log the products being saved
+    console.log('Products being saved:', products);
 
     await newOrder.save();
     
@@ -141,6 +144,38 @@ router.get('/all-orders', async (req, res) => {
       success: false, 
       message: 'Error fetching orders',
       error: error.message 
+    });
+  }
+});
+
+// Add this new route for seller payouts
+router.post('/seller-payout', async (req, res) => {
+  try {
+    const { amount, upiId, sellerName } = req.body;
+
+    const options = {
+      amount: Math.round(amount * 100), // Convert to paise
+      currency: "INR",
+      payment_capture: 1,
+      notes: {
+        upiId: upiId,
+        purpose: "Seller Payout",
+        sellerName: sellerName
+      }
+    };
+
+    const order = await razorpay.orders.create(options);
+
+    res.json({
+      success: true,
+      order
+    });
+  } catch (error) {
+    console.error('Error creating seller payout:', error);
+    res.status(500).json({
+      success: false,
+      message: "Error creating payout",
+      error: error.message
     });
   }
 });

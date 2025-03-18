@@ -4,13 +4,13 @@ import upload_area from "../Assets/upload_area.svg";
 import { backend_url } from "../../App";
 
 const AddProduct = () => {
-  const [image, setImage] = useState(null); // Changed initial state to null
+  const [images, setImages] = useState([]); // Changed to array for multiple images
   const [productDetails, setProductDetails] = useState({
     name: "",
     description: "",
-    image: "",
+    images: [], // Changed to array
     category: "women",
-    subcategory: "", // New state for subcategory
+    subcategory: "",
     new_price: "",
     old_price: "",
   });
@@ -19,101 +19,87 @@ const AddProduct = () => {
 
   // Subcategory options for men, women, and kids
   const subcategories = {
-    women: ["T-Shirt", "Top", "Bottoms", "Jeans", "Hoodies"],
-    men: ["T-Shirt", "Bottoms", "Jeans", "Hoodies"],
-    kid: ["T-Shirt", "Shorts", "Jeans", "Jackets"], // Add subcategory for kids
+    women: ["T-Shirt", "Top", "Bottoms", "Jeans", "Hoodies","Shirts"],
+    men: ["T-Shirt", "Bottoms", "Jeans", "Hoodies","Shirts"],
+    kid: ["T-Shirt", "Shorts", "Jeans", "Jackets","Shirts"], // Add subcategory for kids
   };
 
   const validateForm = () => {
-    // Basic validation
-    if (!productDetails.name || !productDetails.description || !image || !productDetails.new_price || !productDetails.old_price || !productDetails.subcategory) {
-      alert("Please fill all fields and upload an image.");
+    if (!productDetails.name || !productDetails.description || images.length === 0 || !productDetails.new_price || !productDetails.old_price || !productDetails.subcategory) {
+      alert("Please fill all fields and upload at least one image.");
       return false;
     }
     return true;
   };
 
   const addProduct = async () => {
-    if (!validateForm()) {
-      return; // Exit if validation fails
-    }
+    if (!validateForm()) return;
 
     setLoading(true);
     setError(null);
 
     try {
-      let dataObj;
+      // Upload all images
+      const imageUrls = [];
+      for (let image of images) {
+        const formData = new FormData();
+        formData.append("product", image);
 
-      // Create FormData for image upload
-      const formData = new FormData();
-      formData.append("product", image);
-
-      // Debugging logs
-      console.log("Uploading image...");
-
-      // Upload image
-      const imageResponse = await fetch(`${backend_url}/upload`, {
-        method: "POST",
-        headers: {
-          Accept: "application/json",
-        },
-        body: formData,
-      });
-
-      if (!imageResponse.ok) {
-        throw new Error(`Image upload failed with status: ${imageResponse.status}`);
-      }
-
-      dataObj = await imageResponse.json();
-      console.log(dataObj); // Log response from the image upload
-
-      if (dataObj.success) {
-        const product = { 
-          ...productDetails, 
-          image: dataObj.image_url,
-          subcategory: productDetails.subcategory,
-          new_price: Number(productDetails.new_price),
-          old_price: Number(productDetails.old_price)
-        };
-
-        // Debugging logs
-        console.log("Adding product...");
-
-        // Add product details
-        const productResponse = await fetch(`${backend_url}/addproduct`, {
+        const imageResponse = await fetch(`${backend_url}/upload`, {
           method: "POST",
           headers: {
             Accept: "application/json",
-            "Content-Type": "application/json",
           },
-          body: JSON.stringify(product),
+          body: formData,
         });
 
-        if (!productResponse.ok) {
-          throw new Error(`Product addition failed with status: ${productResponse.status}`);
+        if (!imageResponse.ok) {
+          throw new Error(`Image upload failed with status: ${imageResponse.status}`);
         }
 
-        const productData = await productResponse.json();
-        console.log(productData); // Log response from adding product
-
-        if (productData.success) {
-          alert("Product Added");
-          // Clear form after successful submission
-          setProductDetails({
-            name: "",
-            description: "",
-            image: "",
-            category: "women",
-            subcategory: "", // Clear subcategory
-            new_price: "",
-            old_price: "",
-          });
-          setImage(null); // Reset image state
-        } else {
-          alert("Failed to add product");
+        const dataObj = await imageResponse.json();
+        if (dataObj.success) {
+          imageUrls.push(dataObj.image_url);
         }
+      }
+
+      // Add product with all image URLs
+      const product = {
+        ...productDetails,
+        images: imageUrls,
+        new_price: Number(productDetails.new_price),
+        old_price: Number(productDetails.old_price)
+      };
+
+      const productResponse = await fetch(`${backend_url}/addproduct`, {
+        method: "POST",
+        headers: {
+          Accept: "application/json",
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(product),
+      });
+
+      if (!productResponse.ok) {
+        throw new Error(`Product addition failed with status: ${productResponse.status}`);
+      }
+
+      const productData = await productResponse.json();
+      if (productData.success) {
+        alert("Product Added");
+        // Clear form
+        setProductDetails({
+          name: "",
+          description: "",
+          images: [],
+          category: "women",
+          subcategory: "",
+          new_price: "",
+          old_price: "",
+        });
+        setImages([]);
       } else {
-        alert("Image upload failed");
+        alert("Failed to add product");
       }
     } catch (err) {
       setError("An error occurred while adding the product.");
@@ -121,6 +107,15 @@ const AddProduct = () => {
     } finally {
       setLoading(false);
     }
+  };
+
+  const handleImageChange = (e) => {
+    const files = Array.from(e.target.files);
+    setImages(prevImages => [...prevImages, ...files]);
+  };
+
+  const removeImage = (index) => {
+    setImages(prevImages => prevImages.filter((_, i) => i !== index));
   };
 
   const changeHandler = (e) => {
@@ -204,27 +199,50 @@ const AddProduct = () => {
       )}
 
       <div className="addproduct-itemfield">
-        <p>Product image</p>
-        <label htmlFor="file-input">
-          <img
-            className="addproduct-thumbnail-img"
-            src={!image ? upload_area : URL.createObjectURL(image)}
-            alt=""
+        <p>Product images</p>
+        <div className="image-upload-container">
+          <label htmlFor="file-input" className="upload-label">
+            <img
+              className="addproduct-thumbnail-img"
+              src={upload_area}
+              alt="Upload"
+            />
+            <span>Click to upload images</span>
+          </label>
+          <input
+            onChange={handleImageChange}
+            type="file"
+            name="images"
+            id="file-input"
+            accept="image/*"
+            multiple
+            hidden
           />
-        </label>
-        <input
-          onChange={(e) => setImage(e.target.files[0])}
-          type="file"
-          name="image"
-          id="file-input"
-          accept="image/*"
-          hidden
-        />
+        </div>
+        
+        <div className="image-preview-container">
+          {images.map((image, index) => (
+            <div key={index} className="image-preview">
+              <img
+                src={URL.createObjectURL(image)}
+                alt={`Preview ${index + 1}`}
+              />
+              <button
+                type="button"
+                onClick={() => removeImage(index)}
+                className="remove-image"
+              >
+                ×
+              </button>
+            </div>
+          ))}
+        </div>
       </div>
+
       <button className="addproduct-btn" onClick={addProduct} disabled={loading}>
         {loading ? "Adding..." : "ADD"}
       </button>
-      {error && <p className="error-message">{error}</p>} {/* Display error message */}
+      {error && <p className="error-message">{error}</p>}
     </div>
   );
 };

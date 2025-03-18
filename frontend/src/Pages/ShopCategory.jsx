@@ -12,7 +12,14 @@ const ShopCategory = (props) => {
   const fetchInfo = () => { 
     fetch('http://localhost:4000/allproducts') 
       .then((res) => res.json()) 
-      .then((data) => setAllProducts(data));
+      .then((data) => {
+        // Process data to ensure images array exists
+        const processedData = data.map(item => ({
+          ...item,
+          images: item.images || [item.image]
+        }));
+        setAllProducts(processedData);
+      });
   };
 
   useEffect(() => {
@@ -81,7 +88,7 @@ const ShopCategory = (props) => {
             <Item 
               id={item._id} 
               name={item.name} 
-              image={item.image}  
+              images={item.images} 
               new_price={item.new_price} 
               old_price={item.old_price} 
               subcategory={item.subcategory}

@@ -1,11 +1,14 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useContext } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { backend_url } from '../App';
+import ImageModal from '../Components/ImageModal/ImageModal';
+import { ShopContext } from '../Context/ShopContext';
 
 const OrderReviewPage = () => {
   const location = useLocation();
   const navigate = useNavigate();
   const { cartItems, totalAmount } = location.state || {};
+  const [selectedImage, setSelectedImage] = useState(null);
   const [address, setAddress] = useState({
     name: '',
     email: '',
@@ -16,6 +19,7 @@ const OrderReviewPage = () => {
     zipCode: '',
     country: ''
   });
+  const { refreshCart } = useContext(ShopContext);
 
   useEffect(() => {
     if (!cartItems) {
@@ -24,7 +28,7 @@ const OrderReviewPage = () => {
     }
 
     // Fetch user details when component mounts
-    const fetchUserDetails = async () => {
+    const fetchUserProfile = async () => {
       try {
         const token = localStorage.getItem('auth-token');
         if (!token) {
@@ -47,11 +51,16 @@ const OrderReviewPage = () => {
         const data = await response.json();
         if (data.success) {
           console.log('User details fetched:', data.user);
-          setAddress(prev => ({
-            ...prev,
+          setAddress({
             name: data.user.name || '',
-            email: data.user.email || ''
-          }));
+            email: data.user.email || '',
+            phone: data.user.address?.phone || '',
+            street: data.user.address?.street || '',
+            city: data.user.address?.city || '',
+            state: data.user.address?.state || '',
+            zipCode: data.user.address?.zipCode || '',
+            country: data.user.address?.country || ''
+          });
         } else {
           console.error('Failed to fetch user details:', data.message);
           alert('Failed to fetch user details. Please try logging in again.');
@@ -64,7 +73,7 @@ const OrderReviewPage = () => {
       }
     };
 
-    fetchUserDetails();
+    fetchUserProfile();
   }, [cartItems, navigate]);
 
   const handleAddressChange = (e) => {
@@ -83,6 +92,98 @@ const OrderReviewPage = () => {
       script.onerror = () => resolve(false);
       document.body.appendChild(script);
     });
+  };
+
+  const handlePaymentSuccess = async (response) => {
+    try {
+      // Save order details
+      const saveResponse = await fetch(`${backend_url}/api/orders/save`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'auth-token': localStorage.getItem("auth-token")
+        },
+        body: JSON.stringify({
+          paymentId: response.razorpay_payment_id,
+          orderId: response.razorpay_order_id,
+          amount: totalAmount,
+          products: cartItems.map(item => ({
+            productId: item.id.toString(),
+            productTitle: item.name,
+            quantity: item.quantity,
+            price: item.price,
+            subTotal: item.price * item.quantity,
+            images: item.images || [item.image],
+            size: item.size,
+            isThriftProduct: item.isThriftProduct
+          })),
+          name: address.name,
+          email: address.email,
+          phone: address.phone,
+          address: {
+            street: address.street,
+            city: address.city,
+            state: address.state,
+            zipCode: address.zipCode,
+            country: address.country
+          }
+        })
+      });
+
+      const saveData = await saveResponse.json();
+      if (saveData.success) {
+        try {
+          // Process thrift products
+          for (const item of cartItems) {
+            if (item.isThriftProduct) {
+              // Update stock status
+              const stockResponse = await fetch(`${backend_url}/api/seller-data/update-stock/${item.id}`, {
+                method: 'PUT',
+                headers: {
+                  'Content-Type': 'application/json',
+                  'auth-token': localStorage.getItem('auth-token')
+                },
+                body: JSON.stringify({ stock: 'out_of_stock' })
+              });
+
+              if (stockResponse.ok) {
+                // Dispatch event to notify GoThrift about stock update
+                window.dispatchEvent(new CustomEvent('stockUpdated'));
+              }
+
+              // Remove from cart if it was added
+              await fetch(`${backend_url}/removefromcart`, {
+                method: 'POST',
+                headers: {
+                  Accept: 'application/json',
+                  'auth-token': localStorage.getItem('auth-token'),
+                  'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({ itemId: item.id })
+              });
+            }
+          }
+
+          // If there's a callback for order completion, call it
+          if (location.state?.onOrderComplete) {
+            location.state.onOrderComplete();
+          }
+
+          await refreshCart();
+        } catch (error) {
+          console.error('Error processing thrift products:', error);
+        }
+
+        alert("Payment Successful! Order placed.");
+        localStorage.removeItem('cartItems');
+        navigate('/your-orders');
+      } else {
+        throw new Error(saveData.message || 'Failed to save order');
+      }
+    } catch (error) {
+      console.error("Error processing order:", error);
+      alert("Payment successful but order processing failed. Please contact support.");
+    }
   };
 
   const handleProceedToPayment = async () => {
@@ -128,56 +229,7 @@ const OrderReviewPage = () => {
         order_id: orderData.order.id,
         name: "Your Shop Name",
         description: "Order Payment",
-        handler: async function (response) {
-          try {
-            // Save order details
-            const saveResponse = await fetch(`${backend_url}/api/orders/save`, {
-              method: 'POST',
-              headers: {
-                'Content-Type': 'application/json',
-                'auth-token': localStorage.getItem("auth-token")
-              },
-              body: JSON.stringify({
-                paymentId: response.razorpay_payment_id,
-                orderId: orderData.order.id,
-                amount: totalAmount,
-                products: cartItems.map(item => ({
-                  productId: item.id,
-                  productTitle: item.name,
-                  quantity: item.quantity,
-                  price: item.price,
-                  subTotal: item.price * item.quantity,
-                  image: item.image,
-                  size: item.size || cartItems[item.id]?.size || 'N/A'
-                })),
-                name: address.name,
-                email: address.email,
-                phone: address.phone,
-                address: {
-                  street: address.street,
-                  city: address.city,
-                  state: address.state,
-                  zipCode: address.zipCode,
-                  country: address.country
-                }
-              })
-            });
-
-            const saveData = await saveResponse.json();
-            if (saveData.success) {
-              alert("Payment Successful! Order placed.");
-              // Clear cart
-              localStorage.removeItem('cartItems');
-              // Redirect to orders page
-              navigate('/your-orders');
-            } else {
-              throw new Error(saveData.message || 'Failed to save order');
-            }
-          } catch (error) {
-            console.error("Error saving order:", error);
-            alert("Payment successful but order saving failed. Please contact support.");
-          }
-        },
+        handler: handlePaymentSuccess,
         prefill: {
           name: address.name,
           email: address.email,
@@ -200,6 +252,14 @@ const OrderReviewPage = () => {
 
   return (
     <div className="order-review-container" style={{ padding: '20px', maxWidth: '800px', margin: '0 auto' }}>
+      {/* Add Image Modal */}
+      {selectedImage && (
+        <ImageModal 
+          image={`${backend_url}${selectedImage}`}
+          onClose={() => setSelectedImage(null)}
+        />
+      )}
+
       <h2>Review Your Order</h2>
 
       {/* Cart Items Review */}
@@ -211,17 +271,69 @@ const OrderReviewPage = () => {
             borderBottom: '1px solid #eee',
             marginBottom: '10px'
           }}>
-            <img 
-              src={`${backend_url}${item.image}`} 
-              alt={item.name}
-              style={{ width: '100px', height: '100px', objectFit: 'cover', marginRight: '20px' }}
-            />
-            <div className="item-details">
-              <h3>{item.name}</h3>
-              <p>Size: {item.size}</p>
-              <p>Quantity: {item.quantity}</p>
-              <p>Price: ₹{item.price}</p>
-              <p>Subtotal: ₹{item.subTotal}</p>
+            {/* Product Images Section */}
+            <div className="product-images" style={{ marginRight: '20px' }}>
+              {/* Main Image */}
+              {item.images && item.images.length > 0 ? (
+                <img 
+                  src={`${backend_url}${item.images[0]}`} 
+                  alt={item.name}
+                  style={{ 
+                    width: '100px', 
+                    height: '100px', 
+                    objectFit: 'cover', 
+                    marginBottom: '5px',
+                    cursor: 'pointer',
+                    borderRadius: '4px'
+                  }}
+                  onClick={() => setSelectedImage(item.images[0])}
+                />
+              ) : (
+                <div style={{ 
+                  width: '100px', 
+                  height: '100px', 
+                  backgroundColor: '#eee',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  borderRadius: '4px'
+                }}>
+                  No Image
+                </div>
+              )}
+
+              {/* Thumbnail Strip */}
+              {item.images && item.images.length > 1 && (
+                <div style={{ 
+                  display: 'flex', 
+                  gap: '5px', 
+                  marginTop: '5px'
+                }}>
+                  {item.images.slice(1).map((image, imgIndex) => (
+                    <img
+                      key={imgIndex}
+                      src={`${backend_url}${image}`}
+                      alt={`${item.name} view ${imgIndex + 2}`}
+                      style={{ 
+                        width: '30px', 
+                        height: '30px', 
+                        objectFit: 'cover',
+                        cursor: 'pointer',
+                        borderRadius: '2px'
+                      }}
+                      onClick={() => setSelectedImage(image)}
+                    />
+                  ))}
+                </div>
+              )}
+            </div>
+
+            <div className="item-details" style={{ flex: 1 }}>
+              <h3 style={{ marginBottom: '10px' }}>{item.name}</h3>
+              <p style={{ margin: '5px 0' }}>Size: {item.size}</p>
+              <p style={{ margin: '5px 0' }}>Quantity: {item.quantity}</p>
+              <p style={{ margin: '5px 0' }}>Price: ₹{item.price}</p>
+              <p style={{ margin: '5px 0' }}>Subtotal: ₹{item.subTotal}</p>
             </div>
           </div>
         ))}
@@ -236,40 +348,50 @@ const OrderReviewPage = () => {
       }}>
         <h3>Shipping Address</h3>
         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '15px', marginTop: '15px' }}>
-          <input
-            type="text"
-            name="name"
-            placeholder="Full Name"
-            value={address.name}
-            onChange={handleAddressChange}
-            style={inputStyle}
-            readOnly
-          />
-          <input
-            type="email"
-            name="email"
-            placeholder="Email"
-            value={address.email}
-            onChange={handleAddressChange}
-            style={inputStyle}
-            readOnly
-          />
-          <input
-            type="tel"
-            name="phone"
-            placeholder="Phone Number"
-            value={address.phone}
-            onChange={handleAddressChange}
-            style={inputStyle}
-          />
-          <input
-            type="text"
-            name="street"
-            placeholder="Street Address"
-            value={address.street}
-            onChange={handleAddressChange}
-            style={inputStyle}
-          />
+          <div style={{ gridColumn: 'span 2' }}>
+            <input
+              type="text"
+              name="name"
+              placeholder="Full Name"
+              value={address.name}
+              onChange={handleAddressChange}
+              style={inputStyle}
+              readOnly
+            />
+          </div>
+          <div style={{ gridColumn: 'span 2' }}>
+            <input
+              type="email"
+              name="email"
+              placeholder="Email"
+              value={address.email}
+              onChange={handleAddressChange}
+              style={inputStyle}
+              readOnly
+            />
+          </div>
+          <div style={{ gridColumn: 'span 2' }}>
+            <input
+              type="tel"
+              name="phone"
+              placeholder="Phone Number"
+              value={address.phone}
+              onChange={handleAddressChange}
+              style={inputStyle}
+              pattern="[0-9]{10}"
+              title="Please enter a valid 10-digit phone number"
+            />
+          </div>
+          <div style={{ gridColumn: 'span 2' }}>
+            <input
+              type="text"
+              name="street"
+              placeholder="Street Address"
+              value={address.street}
+              onChange={handleAddressChange}
+              style={inputStyle}
+            />
+          </div>
           <input
             type="text"
             name="city"
@@ -331,6 +453,30 @@ const OrderReviewPage = () => {
         }}>
           <span>Total:</span>
           <span>₹{totalAmount}</span>
+        </div>
+      </div>
+
+      {/* Shipping Address Display */}
+      <div className="shipping-address" style={{ 
+        marginTop: '20px',
+        padding: '15px',
+        backgroundColor: '#f8f9fa',
+        borderRadius: '8px'
+      }}>
+        <h4>Shipping Address</h4>
+        <div style={{ 
+          marginTop: '10px',
+          display: 'grid',
+          gap: '8px'
+        }}>
+          <p><strong>Name:</strong> {address.name}</p>
+          <p><strong>Email:</strong> {address.email}</p>
+          <p><strong>Phone:</strong> {address.phone || 'Not set'}</p>
+          <p><strong>Address:</strong> {address.street || 'Not set'}</p>
+          <p><strong>City:</strong> {address.city || 'Not set'}</p>
+          <p><strong>State:</strong> {address.state || 'Not set'}</p>
+          <p><strong>ZIP Code:</strong> {address.zipCode || 'Not set'}</p>
+          <p><strong>Country:</strong> {address.country || 'Not set'}</p>
         </div>
       </div>
 

@@ -7,6 +7,7 @@ import ListProduct from "../Components/ListProduct/ListProduct";
 import ListUser from "../Components/ListUser/ListUser"; 
 import Orders from "../Components/Orders/Orders";
 import SellerRequest from "../Components/SellerRequest/SellerRequest"
+import ApprovedProducts from '../Components/ApprovedProducts/ApprovedProducts'
 
 const Admin = () => {
 
@@ -19,8 +20,7 @@ const Admin = () => {
         <Route path="/listusers" element={<ListUser />} />
         <Route path="/Orders" element={<Orders />} />
         <Route path="/SellerRequest" element={<SellerRequest/>} />
-
-
+        <Route path='/ApprovedProducts' element={<ApprovedProducts/>} />
       </Routes>
     </div>
   );

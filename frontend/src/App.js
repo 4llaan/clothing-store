@@ -19,6 +19,7 @@ import GoThrift from './Pages/GoThrift';  // Import the GoThrift component
 import SellerForm from './Pages/SelllerForm'  // Import the SellerForm component
 import YourOrders from './Pages/YourOrders'; // Add this import
 import OrderReviewPage from './Pages/OrderReviewPage';
+import MyRequests from './Pages/MyRequests';
 
 
 
@@ -50,6 +51,7 @@ function App() {
           <Route path="/sellerform" element={<SellerForm />} />
           <Route path="/your-orders" element={<YourOrders />} />
           <Route path="/review-order" element={<OrderReviewPage />} />
+          <Route path="/my-requests" element={<MyRequests />} />
 
 
         </Routes>

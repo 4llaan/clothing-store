@@ -1,4 +1,4 @@
-import React, { useState, useContext } from 'react';
+import React, { useState, useContext, useEffect } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { ShopContext } from '../Context/ShopContext';
 import { backend_url } from '../App';
@@ -12,8 +12,8 @@ const Checkout = () => {
   const { userProfile } = useContext(ShopContext);
   const [currentStep, setCurrentStep] = useState(0);
   const [address, setAddress] = useState({
-    name: userProfile?.name || '',
-    email: userProfile?.email || '',
+    name: '',
+    email: '',
     phone: '',
     street: '',
     city: '',
@@ -21,6 +21,42 @@ const Checkout = () => {
     zipCode: '',
     country: ''
   });
+
+  useEffect(() => {
+    const fetchUserProfile = async () => {
+      try {
+        const token = localStorage.getItem('auth-token');
+        if (!token) return;
+
+        const response = await fetch(`${backend_url}/api/auth/getuser`, {
+          headers: {
+            'Content-Type': 'application/json',
+            'auth-token': token
+          }
+        });
+
+        if (response.ok) {
+          const data = await response.json();
+          if (data.success && data.user) {
+            setAddress({
+              name: data.user.name || '',
+              email: data.user.email || '',
+              phone: data.user.address?.phone || '',
+              street: data.user.address?.street || '',
+              city: data.user.address?.city || '',
+              state: data.user.address?.state || '',
+              zipCode: data.user.address?.zipCode || '',
+              country: data.user.address?.country || ''
+            });
+          }
+        }
+      } catch (error) {
+        console.error("Error fetching user profile:", error);
+      }
+    };
+
+    fetchUserProfile();
+  }, []);
 
   const handleNext = () => {
     setCurrentStep((prevStep) => prevStep + 1);
@@ -49,7 +85,8 @@ const Checkout = () => {
           orderDetails: {
             productName: productDetails.name,
             category: productDetails.category,
-            description: productDetails.description
+            description: productDetails.description,
+            images: productDetails.images
           }
         })
       });
@@ -76,7 +113,10 @@ const Checkout = () => {
     <div style={{ maxWidth: '800px', margin: '0 auto', padding: '20px', backgroundColor: '#fff', borderRadius: '8px', boxShadow: '0 2px 4px rgba(0, 0, 0, 0.1)' }}>
       {currentStep === 0 && (
         <OrderReview 
-          productDetails={productDetails}
+          productDetails={{
+            ...productDetails,
+            images: Array.isArray(productDetails.images) ? productDetails.images : [productDetails.image]
+          }}
           onNext={handleNext} 
         />
       )}
@@ -85,7 +125,10 @@ const Checkout = () => {
           address={address} 
           setAddress={setAddress} 
           onNext={handleSubmit}
-          productDetails={productDetails}
+          productDetails={{
+            ...productDetails,
+            images: Array.isArray(productDetails.images) ? productDetails.images : [productDetails.image]
+          }}
         />
       )}
     </div>

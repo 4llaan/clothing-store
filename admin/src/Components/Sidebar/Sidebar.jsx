@@ -38,6 +38,12 @@ const Sidebar = () => {
           <p>Seller Request</p>
         </div>
       </Link>
+      <Link to='/ApprovedProducts' style={{ textDecoration: 'none' }}>
+        <div className="sidebar-item">
+          <img src={list_product_icon} alt="" />
+          <p>Approved Products</p>
+        </div>
+      </Link>
     </div>
   )
 }

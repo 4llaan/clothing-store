@@ -14,6 +14,7 @@ const ProductDisplay = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [selectedSize, setSelectedSize] = useState(null); // State to track selected size
+  const [selectedImageIndex, setSelectedImageIndex] = useState(0); // New state for tracking selected image
   const navigate = useNavigate(); // Initialize useNavigate
 
   useEffect(() => {
@@ -66,17 +67,22 @@ const ProductDisplay = () => {
       return;
     }
     
+    // Get all images from the product
+    const productImages = product.images || [];
+    console.log('Images being passed:', productImages);
+    
     navigate('/checkout', { 
       state: { 
         productDetails: {
           id: product._id,
           name: product.name,
-          image: product.image,
+          images: productImages, // Pass the full images array
           price: product.new_price,
           size: selectedSize,
           quantity: 1,
           description: product.description,
-          category: product.category
+          category: product.category,
+          subcategory: product.subcategory
         }
       }
     });
@@ -89,10 +95,22 @@ const ProductDisplay = () => {
     <div className="productdisplay">
       <div className="productdisplay-left">
         <div className="productdisplay-img-list">
-          <img src={`${backend_url}${product.image}`} alt={product.name} />
+          {product?.images?.map((image, index) => (
+            <img
+              key={index}
+              src={`${backend_url}${image}`}
+              alt={`${product.name} view ${index + 1}`}
+              onClick={() => setSelectedImageIndex(index)}
+              className={selectedImageIndex === index ? "selected-thumbnail" : ""}
+            />
+          ))}
         </div>
         <div className="productdisplay-img">
-          <img className="productdisplay-main-img" src={`${backend_url}${product.image}`} alt={product.name} />
+          <img
+            className="productdisplay-main-img"
+            src={`${backend_url}${product?.images?.[selectedImageIndex]}`}
+            alt={product?.name}
+          />
         </div>
       </div>
       <div className="productdisplay-right">

@@ -12,19 +12,47 @@ const nodemailer = require('nodemailer'); // for sending OTPs
 const crypto = require('crypto'); // for generating OTPs
 const dotenv = require('dotenv')
 const Razorpay = require('razorpay');
+const fs = require('fs');
 
 const paymentRouter = require('./routes/payment');
 const Users = require('./models/Users');
+const NewOrder = require('./models/new_order');
+
+// Import the seller-requests routes
+const sellerDataRoutes = require('./routes/seller-data');
 
 dotenv.config();
 
 // Configure CORS first, before any routes or middleware
 app.use(cors({
-  origin: ['http://localhost:3000', 'http://localhost:3001'],
+  origin: function(origin, callback) {
+    // Allow requests with no origin (like mobile apps or curl requests)
+    if (!origin) {
+      return callback(null, true);
+    }
+
+    // Allow any ngrok URL and localhost
+    if (origin.includes('ngrok-free.app') || 
+        origin.includes('localhost')) {
+      callback(null, origin);
+    } else {
+      callback(new Error('Not allowed by CORS'));
+    }
+  },
   credentials: true,
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
-  allowedHeaders: ['Content-Type', 'auth-token', 'Authorization']
+  allowedHeaders: ['Content-Type', 'auth-token', 'Authorization', 'Origin', 'X-Requested-With'],
+  exposedHeaders: ['Content-Range', 'X-Content-Range']
 }));
+
+// Add OPTIONS preflight handler
+app.options('*', (req, res) => {
+  res.header('Access-Control-Allow-Origin', req.headers.origin);
+  res.header('Access-Control-Allow-Methods', 'GET,PUT,POST,DELETE,OPTIONS');
+  res.header('Access-Control-Allow-Headers', 'Content-Type, Authorization, auth-token');
+  res.header('Access-Control-Allow-Credentials', true);
+  res.sendStatus(200);
+});
 
 // Then add other middleware
 app.use(express.json());
@@ -34,27 +62,6 @@ app.use(express.urlencoded({ extended: true }));
 app.use('/api/orders', paymentRouter);
 
 const port = process.env.PORT || 4000;
-
-// Define the schema first
-const sellerProductSchema = new mongoose.Schema({
-    name: { type: String, required: true },
-    description: { type: String, required: true },
-    new_price: { type: Number, required: true },
-    size: { type: String, required: true },
-    length: { type: Number, required: true },
-    chest: { type: Number, required: true },
-    shoulder: { type: Number, required: true },
-    category: { type: String, required: true },
-    images: [{ type: String, required: true }],
-    available: { type: Boolean, default: false },
-    submittedAt: { type: Date, default: Date.now },
-    userId: { type: mongoose.Schema.Types.ObjectId, ref: 'Users', required: true },
-    userEmail: { type: String, required: true },
-    userName: { type: String, required: true }
-});
-
-// Create the model
-const SellerProduct = mongoose.model('SellerProduct', sellerProductSchema);
 
 // Email configuration
 const transporter = nodemailer.createTransport({
@@ -84,6 +91,16 @@ mongoose.connect("mongodb+srv://alen:alen123@cluster0.wlq7v.mongodb.net/e-commer
   console.error("MongoDB connection error:", err);
 });
 
+// Create uploads directory if it doesn't exist
+const uploadDir = path.join(__dirname, 'uploads');
+const profilesDir = path.join(uploadDir, 'profiles');
+
+if (!fs.existsSync(uploadDir)) {
+    fs.mkdirSync(uploadDir);
+}
+if (!fs.existsSync(profilesDir)) {
+    fs.mkdirSync(profilesDir);
+}
 
 // Image Storage Engine 
 const storage = multer.diskStorage({
@@ -94,11 +111,30 @@ const storage = multer.diskStorage({
 });
 const upload = multer({ storage: storage });
 
-app.post("/upload", upload.single('product'), (req, res) => {
-  res.json({
-    success: 1,
-    image_url: `/images/${req.file.filename}`
-  });
+app.post("/upload", upload.array('product', 5), (req, res) => {
+  try {
+    if (!req.files || req.files.length === 0) {
+      return res.status(400).json({
+        success: false,
+        message: "No files were uploaded."
+      });
+    }
+
+    // Return array of image URLs
+    const imageUrls = req.files.map(file => `/images/${file.filename}`);
+    
+    res.json({
+      success: true,
+      image_url: imageUrls[0], // For backward compatibility
+      image_urls: imageUrls // Array of all uploaded image URLs
+    });
+  } catch (error) {
+    console.error("Error uploading files:", error);
+    res.status(500).json({
+      success: false,
+      message: "Error uploading files"
+    });
+  }
 });
 
 // Route for Images folder
@@ -124,7 +160,7 @@ const productSchema = new mongoose.Schema({
   id: { type: Number, required: true, unique: true },
   name: { type: String, required: true },
   description: { type: String, required: true },
-  image: { type: String, required: true },
+  images: [{ type: String, required: true }],
   category: { type: String, required: true },
   subcategory: { type: String },
   new_price: { type: Number, required: true, default: 0 },
@@ -164,75 +200,103 @@ app.post('/create-order', fetchuser, async (req, res) => {
     const { productId, selectedSize, quantity, totalAmount, shippingAddress } = req.body;
     const userId = req.user.id;
 
-    // Create new order with a temporary payment ID
-    const order = new Orders({
+    // Create new order
+    const newOrder = new Orders({
       userId,
       items: [{
-        productId: String(productId),
+        productId,
         quantity,
         size: selectedSize,
         price: totalAmount
       }],
       totalAmount,
       shippingAddress,
-      status: 'Pending',
-      paymentStatus: 'Pending',
-      paymentId: `TEMP_${Date.now()}` // Add a temporary unique payment ID
     });
 
-    await order.save();
-
-    res.json({ 
-      success: true, 
-      message: 'Order created successfully',
-      orderId: order._id 
-    });
-
+    await newOrder.save();
+    res.json({ success: true, order: newOrder });
   } catch (error) {
     console.error('Error creating order:', error);
-    res.status(500).json({ 
-      success: false, 
-      message: "Error creating order",
-      error: error.message 
-    });
+    res.status(500).json({ success: false, message: "Error creating order" });
   }
 });
 
 // Get all orders (for admin)
-app.get('/admin/orders', async (req, res) => {
+app.get('/api/orders/all-orders', async (req, res) => {
   try {
-    const orders = await Orders.find()
-      .populate('userId', 'name email')
-      .sort({ orderDate: -1 });
-    res.json(orders);
+    const orders = await NewOrder.find()
+      .sort({ createdAt: -1 });
+    res.json({
+      success: true,
+      orders
+    });
   } catch (error) {
-    res.status(500).json({ success: false, message: "Error fetching orders" });
+    res.status(500).json({ 
+      success: false, 
+      message: "Error fetching orders" 
+    });
   }
 });
 
 // Get user's orders
-app.get('/user/orders', fetchuser, async (req, res) => {
+app.get('/api/orders/my-orders', fetchuser, async (req, res) => {
   try {
-    const orders = await Orders.find({ userId: req.user.id })
-      .sort({ orderDate: -1 });
-    res.json(orders);
+    const orders = await NewOrder.find({ email: req.user.email })
+      .sort({ createdAt: -1 });
+    res.json({
+      success: true,
+      orders
+    });
   } catch (error) {
-    res.status(500).json({ success: false, message: "Error fetching orders" });
+    res.status(500).json({ 
+      success: false, 
+      message: "Error fetching orders" 
+    });
   }
 });
 
-// Update order status (for admin)
-app.put('/admin/order/:orderId', async (req, res) => {
+// Update order status endpoint
+app.put('/api/orders/update-status/:orderId', async (req, res) => {
   try {
+    const { orderId } = req.params;
     const { status } = req.body;
-    const order = await Orders.findByIdAndUpdate(
-      req.params.orderId,
-      { status },
+    
+    const validStatuses = ['Pending', 'Processing', 'Shipped', 'Delivered', 'Cancelled'];
+    if (!validStatuses.includes(status)) {
+      return res.status(400).json({ 
+        success: false, 
+        message: 'Invalid status' 
+      });
+    }
+
+    // Update status for all products in the order
+    const updatedOrder = await NewOrder.findByIdAndUpdate(
+      orderId,
+      { 
+        $set: { 
+          'products.$[].status': status 
+        }
+      },
       { new: true }
     );
-    res.json(order);
+
+    if (!updatedOrder) {
+      return res.status(404).json({ 
+        success: false, 
+        message: 'Order not found' 
+      });
+    }
+
+    res.json({ 
+      success: true, 
+      order: updatedOrder 
+    });
   } catch (error) {
-    res.status(500).json({ success: false, message: "Error updating order" });
+    console.error('Error updating order status:', error);
+    res.status(500).json({ 
+      success: false, 
+      message: 'Error updating order status' 
+    });
   }
 });
 
@@ -400,7 +464,7 @@ app.post("/addproduct", async (req, res) => {
       id: id,
       name: req.body.name,
       description: req.body.description,
-      image: req.body.image,
+      images: req.body.images,
       category: req.body.category,
       subcategory: req.body.subcategory,
       new_price: req.body.new_price,
@@ -474,37 +538,58 @@ app.get("/api/profile", fetchuser, async (req, res) => {
 
 
 // Update User Profile Endpoint
-app.post("/api/updateprofile", fetchuser, async (req, res) => {
-  try {
-    const { name, email, profilePic, currentPassword, newPassword } = req.body;
-    
-    // Find the user
-    const user = await Users.findById(req.user.id);
-    if (!user) {
-      return res.status(404).json({ message: "User not found" });
+app.post('/api/auth/updateprofile', fetchuser, async (req, res) => {
+    try {
+        const { name, email, currentPassword, newPassword, upiId, address } = req.body;
+        const userId = req.user.id;
+
+        const user = await Users.findById(userId);
+        if (!user) {
+            return res.status(404).json({ success: false, message: 'User not found' });
+        }
+
+        // Update basic info
+        if (name) user.name = name;
+        if (email) user.email = email;
+        
+        // Update UPI ID
+        if (upiId !== undefined) {
+            user.upiId = upiId;
+        }
+
+        // Update address including phone number
+        if (address) {
+            user.address = {
+                street: address.street || '',
+                city: address.city || '',
+                state: address.state || '',
+                zipCode: address.zipCode || '',
+                country: address.country || '',
+                phone: address.phone || ''  // Include phone number
+            };
+        }
+
+        // Update password if provided
+        if (newPassword && currentPassword) {
+            const isMatch = await bcrypt.compare(currentPassword, user.password);
+            if (!isMatch) {
+                return res.status(400).json({ success: false, message: 'Current password is incorrect' });
+            }
+            const salt = await bcrypt.genSalt(10);
+            const hashedPassword = await bcrypt.hash(newPassword, salt);
+            user.password = hashedPassword;
+        }
+
+        await user.save();
+
+        // Return updated user without password
+        const updatedUser = await Users.findById(userId).select('-password');
+        res.json({ success: true, user: updatedUser });
+
+    } catch (error) {
+        console.error('Error updating profile:', error);
+        res.status(500).json({ success: false, message: 'Error updating profile' });
     }
-
-    // Update user fields
-    user.name = name || user.name;
-    user.email = email || user.email;
-    user.profilePic = profilePic || user.profilePic;
-
-    // If updating password, verify current password and update to new password
-    if (currentPassword && newPassword) {
-      const passwordMatch = await bcrypt.compare(currentPassword, user.password);
-      if (!passwordMatch) {
-        return res.status(400).json({ message: "Current password is incorrect" });
-      }
-      const salt = await bcrypt.genSalt(10);
-      user.password = await bcrypt.hash(newPassword, salt);  // Hash the new password
-    }
-
-    // Save updated user
-    await user.save();
-    res.json({ message: "Profile updated successfully", user });
-  } catch (error) {
-    res.status(500).json({ message: "Error updating profile", error });
-  }
 });
 
 
@@ -660,158 +745,537 @@ app.get('/product/:id', async (req, res) => {
   }
 });
 
-// Initialize Razorpay with environment variables
+// Update the Razorpay initialization with your test keys
 const razorpay = new Razorpay({
-  key_id: process.env.RAZORPAY_KEY, // Ensure this is correct
-  key_secret: process.env.RAZORPAY_SECRET, // Ensure this is correct
+  key_id: 'rzp_test_7qXqryRXwyy9GP',     // Your test key ID
+  key_secret: 'wpkyE3JQHW7gFPu5FsK9vX5a'  // Your test key secret
 });
 
-// Handle successful payment
-app.post('/payment-success', async (req, res) => {
-  const { order_id, payment_id } = req.body;
+// Add this new route for seller payouts
+app.post('/api/payment/seller-payout', async (req, res) => {
+  try {
+    const { amount, upiId, sellerName } = req.body;
+    
+    if (!amount || !upiId || !sellerName) {
+      return res.status(400).json({
+        success: false,
+        message: "Missing required fields"
+      });
+    }
 
-  // Update the order status in your database
-  const order = await Order.findOne({ razorpayOrderId: order_id });
-  if (order) {
-    order.status = 'Completed';
-    await order.save();
-    res.json({ success: true });
-  } else {
-    res.status(404).json({ success: false, message: 'Order not found' });
+    const options = {
+      amount: Math.round(amount * 100), // amount in paise
+      currency: "INR",
+      receipt: `receipt_${Date.now()}`,
+      notes: {
+        upiId: upiId,
+        purpose: "Seller Payout",
+        sellerName: sellerName
+      }
+    };
+
+    const order = await razorpay.orders.create(options);
+    
+    res.json({
+      success: true,
+      order,
+      key_id: 'rzp_test_7qXqryRXwyy9GP' // Send key_id to frontend
+    });
+  } catch (error) {
+    console.error('Error creating seller payout:', error);
+    res.status(500).json({
+      success: false,
+      message: "Error creating payout",
+      error: error.message
+    });
   }
 });
 
-
-
-
-
-
-
-
-// Add this endpoint to handle product submissions
-app.post('/submit-product', fetchuser, async (req, res) => {
-    const { name, description, price, size, length, chest, shoulder, category, images } = req.body;
-
-    try {
-        // Get user info
-        const user = await Users.findById(req.user.id);
-        if (!user) {
-            return res.status(404).json({ success: false, message: "User not found" });
-        }
-
-        // Create a new product instance
-        const newProduct = new SellerProduct({
-            name,
-            description,
-            new_price: Number(price),
-            size,
-            length: Number(length),
-            chest: Number(chest),
-            shoulder: Number(shoulder),
-            category,
-            images,
-            available: false,
-            userId: user._id,
-            userEmail: user.email,
-            userName: user.name
-        });
-
-        await newProduct.save();
-        res.json({ 
-            success: true, 
-            message: "Product submitted for review successfully." 
-        });
-    } catch (error) {
-        console.error("Error submitting product:", error);
-        res.status(500).json({ 
-            success: false, 
-            message: error.message || "Error submitting product." 
-        });
-    }
-});
-
-// Endpoint to fetch seller requests
-app.get('/api/seller-requests', async (req, res) => {
-    try {
-        // Fetch all products that are not yet approved, sorted by submission date
-        const requests = await SellerProduct.find({ available: false })
-            .sort({ submittedAt: -1 }); // Most recent first
-        
-        if (!requests) {
-            return res.status(404).json({ 
-                success: false, 
-                message: "No pending requests found" 
-            });
-        }
-        
-        res.json(requests);
-    } catch (error) {
-        console.error("Error fetching seller requests:", error);
-        res.status(500).json({ 
-            success: false, 
-            message: "Error fetching seller requests." 
-        });
-    }
-});
-
-// Update the accept product endpoint
-app.post('/api/accept-product/:id', async (req, res) => {
-    try {
-        const { id } = req.params;
-        const updatedProduct = await SellerProduct.findByIdAndUpdate(
-            id, 
-            { available: true },
-            { new: true }
-        );
-        if (!updatedProduct) {
-            return res.status(404).json({ success: false, message: "Product not found" });
-        }
-        res.json({ success: true, product: updatedProduct });
-    } catch (error) {
-        console.error("Error accepting product:", error);
-        res.status(500).json({ success: false, message: "Error accepting product" });
-    }
-});
-
-// Endpoint to reject a product
-app.post('/api/reject-product/:id', async (req, res) => {
-    const { id } = req.params;
-    await SellerProduct.findByIdAndDelete(id); // Remove the product
-    res.json({ success: true });
-});
-
-// Endpoint to fetch accepted products
-app.get('/api/accepted-products', async (req, res) => {
-    try {
-        const products = await SellerProduct.find({ available: true }); // Fetch products that are approved
-        res.json(products);
-    } catch (error) {
-        console.error("Error fetching accepted products:", error);
-        res.status(500).json({ success: false, message: "Error fetching accepted products." });
-    }
-});
-
-// Add this endpoint for getting user details
-app.get('/api/auth/getuser', fetchuser, async (req, res) => {
+// Add this route to verify payment
+app.post('/api/payment/verify', async (req, res) => {
   try {
-    const user = await Users.findById(req.user.id).select('-password');
-    if (!user) {
-      return res.status(404).json({ success: false, message: 'User not found' });
+    const {
+      razorpay_order_id,
+      razorpay_payment_id,
+      razorpay_signature
+    } = req.body;
+
+    const sign = razorpay_order_id + "|" + razorpay_payment_id;
+    const expectedSign = crypto
+      .createHmac("sha256", 'wpkyE3JQHW7gFPu5FsK9vX5a')
+      .update(sign.toString())
+      .digest("hex");
+
+    if (razorpay_signature === expectedSign) {
+      return res.status(200).json({
+        success: true,
+        message: "Payment verified successfully"
+      });
+    } else {
+      return res.status(400).json({
+        success: false,
+        message: "Invalid signature sent!"
+      });
     }
+  } catch (error) {
+    res.status(500).json({
+      success: false,
+      message: "Internal Server Error!"
+    });
+  }
+});
+
+// Update getuser route
+app.get('/api/auth/getuser', fetchuser, async (req, res) => {
+    try {
+        const userId = req.user.id;
+        const user = await Users.findById(userId).select('-password');
+        res.json({
+            success: true,
+            user: {
+                id: user._id,
+                name: user.name,
+                email: user.email,
+                date: user.date,
+                profilePic: user.profilePic,
+                upiId: user.upiId,
+                document: user.document,
+                documentVerified: user.documentVerified,
+                address: {
+                    street: user.address?.street || '',
+                    city: user.address?.city || '',
+                    state: user.address?.state || '',
+                    zipCode: user.address?.zipCode || '',
+                    country: user.address?.country || '',
+                    phone: user.address?.phone || ''  // Added phone field
+                }
+            }
+        });
+    } catch (error) {
+        console.error('Error in getuser:', error);
+        res.status(500).send({ error: "Internal Server Error" });
+    }
+});
+
+// Update the updateproduct endpoint
+app.post('/updateproduct', async (req, res) => {
+  try {
+    const { id, name, category, subcategory, new_price, old_price, images, description } = req.body;
+    
+    if (!id) {
+      return res.status(400).json({ 
+        success: false, 
+        message: 'Product ID is required' 
+      });
+    }
+
+    console.log('Updating product:', id, 'with data:', req.body); // Debug log
+
+    const updatedProduct = await Product.findByIdAndUpdate(
+      id,
+      {
+        name,
+        category,
+        subcategory,
+        new_price: Number(new_price),
+        old_price: Number(old_price),
+        images,
+        description
+      },
+      { new: true }
+    );
+
+    if (!updatedProduct) {
+      return res.status(404).json({ 
+        success: false, 
+        message: 'Product not found' 
+      });
+    }
+
+    console.log('Product updated successfully:', updatedProduct); // Debug log
+
     res.json({ 
       success: true, 
-      user: {
-        name: user.name,
-        email: user.email,
-        id: user._id
-      }
+      product: updatedProduct 
     });
   } catch (error) {
-    console.error('Error in getuser:', error);
+    console.error('Error updating product:', error);
     res.status(500).json({ 
       success: false, 
-      message: 'Error fetching user details',
+      message: 'Error updating product',
       error: error.message 
+    });
+  }
+});
+
+// Add this route for seller requests
+app.post('/api/submit-seller-request', fetchuser, async (req, res) => {
+    try {
+        const userId = req.user.id;
+        
+        // Create new seller request with user ID and form data
+        const sellerRequest = new SellerRequest({
+            userId,
+            productName: req.body.name, // Match the frontend data structure
+            price: req.body.price,
+            productDetails: req.body.description,
+            category: req.body.category,
+            type: req.body.type,
+            // Conditionally add size or measurements based on type
+            ...(req.body.type === 'tops' && { size: req.body.size }),
+            ...(req.body.type === 'bottoms' && {
+                waist: req.body.waist,
+                length: req.body.length
+            }),
+            images: req.body.images
+        });
+
+        // Save the seller request
+        await sellerRequest.save();
+
+        res.json({
+            success: true,
+            message: 'Seller request submitted successfully',
+            requestId: sellerRequest._id
+        });
+
+    } catch (error) {
+        console.error('Error in submit-seller-request:', error);
+        res.status(500).json({
+            success: false,
+            message: error.message || 'Internal server error'
+        });
+    }
+});
+
+// Update the seller requests route
+app.get('/api/seller-requests/all', fetchuser, async (req, res) => {
+    try {
+        // Fetch all requests and populate user details
+        const requests = await SellerRequest.find()
+            .sort({ createdAt: -1 })
+            .populate({
+                path: 'userId',
+                model: 'Users',
+                select: 'name email'
+            });
+            
+        res.json({
+            success: true,
+            requests: requests.map(request => ({
+                _id: request._id,
+                productName: request.productName,
+                price: request.price,
+                productDetails: request.productDetails,
+                category: request.category,
+                type: request.type,
+                size: request.size,
+                waist: request.waist,
+                length: request.length,
+                images: request.images,
+                status: request.status,
+                adminFeedback: request.adminFeedback,
+                createdAt: request.createdAt,
+                updatedAt: request.updatedAt,
+                userName: request.userId.name,
+                userEmail: request.userId.email
+            }))
+        });
+    } catch (error) {
+        console.error('Error fetching seller requests:', error);
+        res.status(500).json({
+            success: false,
+            message: 'Error fetching seller requests'
+        });
+    }
+});
+
+// Add route to update seller request status
+app.put('/api/seller-requests/update-status/:requestId', fetchuser, async (req, res) => {
+    try {
+        const { requestId } = req.params;
+        const { status, adminFeedback } = req.body;
+        
+        if (!['pending', 'approved', 'rejected'].includes(status)) {
+            return res.status(400).json({
+                success: false,
+                message: 'Invalid status'
+            });
+        }
+
+        const updatedRequest = await SellerRequest.findByIdAndUpdate(
+            requestId,
+            { 
+                status,
+                adminFeedback,
+                updatedAt: Date.now()
+            },
+            { new: true }
+        );
+
+        if (!updatedRequest) {
+            return res.status(404).json({
+                success: false,
+                message: 'Request not found'
+            });
+        }
+
+        res.json({
+            success: true,
+            request: updatedRequest
+        });
+    } catch (error) {
+        console.error('Error updating request status:', error);
+        res.status(500).json({
+            success: false,
+            message: 'Error updating request status'
+        });
+    }
+});
+
+// Add this route to get approved seller products
+app.get('/api/accepted-products', async (req, res) => {
+    try {
+        const approvedProducts = await SellerRequest.find({ status: 'approved' })
+            .populate('userId', 'name email')
+            .sort({ updatedAt: -1 });
+
+        const formattedProducts = approvedProducts.map(product => ({
+            id: product._id,
+            name: product.productName,
+            description: product.productDetails,
+            new_price: product.price,
+            category: product.category,
+            type: product.type,
+            size: product.size,
+            waist: product.waist,
+            length: product.length,
+            image: product.images[0], // First image as main image
+            images: product.images, // All images
+            seller: {
+                name: product.userId.name,
+                email: product.userId.email
+            }
+        }));
+
+        res.json({
+            success: true,
+            products: formattedProducts
+        });
+    } catch (error) {
+        console.error('Error fetching approved products:', error);
+        res.status(500).json({
+            success: false,
+            message: 'Error fetching products'
+        });
+    }
+});
+
+// Add route to get user's seller requests
+app.get('/api/seller-requests/my-requests', fetchuser, async (req, res) => {
+    try {
+        const userId = req.user.id;
+        
+        // Fetch requests for the specific user
+        const requests = await SellerRequest.find({ userId })
+            .sort({ createdAt: -1 }); // Newest first
+            
+        res.json({
+            success: true,
+            requests: requests.map(request => ({
+                _id: request._id,
+                productName: request.productName,
+                price: request.price,
+                productDetails: request.productDetails,
+                category: request.category,
+                type: request.type,
+                size: request.size,
+                waist: request.waist,
+                length: request.length,
+                images: request.images,
+                status: request.status,
+                adminFeedback: request.adminFeedback,
+                createdAt: request.createdAt,
+                updatedAt: request.updatedAt
+            }))
+        });
+    } catch (error) {
+        console.error('Error fetching user requests:', error);
+        res.status(500).json({
+            success: false,
+            message: 'Error fetching your requests'
+        });
+    }
+});
+
+// Configure multer for profile picture uploads
+const profileStorage = multer.diskStorage({
+    destination: function (req, file, cb) {
+        cb(null, './uploads/profiles')
+    },
+    filename: function (req, file, cb) {
+        const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9)
+        cb(null, 'profile-' + uniqueSuffix + path.extname(file.originalname))
+    }
+});
+
+const profileUpload = multer({ 
+    storage: profileStorage,
+    limits: {
+        fileSize: 5 * 1024 * 1024 // 5MB limit
+    },
+    fileFilter: function (req, file, cb) {
+        // Accept images only
+        if (!file.originalname.match(/\.(jpg|jpeg|png|gif)$/)) {
+            return cb(new Error('Only image files are allowed!'), false);
+        }
+        cb(null, true);
+    }
+});
+
+// Serve profile pictures
+app.use('/uploads/profiles', express.static(path.join(__dirname, 'uploads/profiles')));
+
+// Update the profile picture upload endpoint
+app.post('/api/upload-profile-pic', fetchuser, profileUpload.single('profilePic'), async (req, res) => {
+    try {
+        if (!req.file) {
+            return res.status(400).json({ 
+                success: false, 
+                message: 'No file uploaded' 
+            });
+        }
+
+        // Create the image URL
+        const imageUrl = `/uploads/profiles/${req.file.filename}`;
+
+        // Find current user data
+        const currentUser = await Users.findById(req.user.id);
+        if (!currentUser) {
+            return res.status(404).json({
+                success: false,
+                message: 'User not found'
+            });
+        }
+
+        // Update user while preserving existing data
+        const user = await Users.findByIdAndUpdate(
+            req.user.id, 
+            {
+                $set: {
+                    profilePic: imageUrl,
+                    // Preserve existing data
+                    upiId: currentUser.upiId,
+                    address: currentUser.address
+                }
+            },
+            { new: true }
+        ).select('-password');
+
+        res.json({
+            success: true,
+            imageUrl: imageUrl,
+            user: user
+        });
+
+    } catch (error) {
+        console.error('Error uploading profile picture:', error);
+        res.status(500).json({
+            success: false,
+            message: 'Error uploading profile picture'
+        });
+    }
+});
+
+// Serve static files from uploads directory
+app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
+
+// Add the seller-requests routes
+app.use('/api/seller-data', sellerDataRoutes);
+
+// Add this near other multer configurations
+const documentStorage = multer.diskStorage({
+  destination: function (req, file, cb) {
+    const documentsDir = './uploads/documents';
+    if (!fs.existsSync(documentsDir)) {
+      fs.mkdirSync(documentsDir, { recursive: true });
+    }
+    cb(null, documentsDir);
+  },
+  filename: function (req, file, cb) {
+    const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9);
+    cb(null, 'doc-' + uniqueSuffix + path.extname(file.originalname));
+  }
+});
+
+const documentUpload = multer({
+  storage: documentStorage,
+  limits: {
+    fileSize: 5 * 1024 * 1024 // 5MB limit
+  },
+  fileFilter: function (req, file, cb) {
+    // Accept only specific file types
+    if (!file.mimetype.match(/^(application\/pdf|image\/(jpeg|png))$/)) {
+      return cb(new Error('Only PDF, JPEG, and PNG files are allowed!'), false);
+    }
+    cb(null, true);
+  }
+});
+
+// Serve document files
+app.use('/uploads/documents', express.static(path.join(__dirname, 'uploads/documents')));
+
+// Update the document upload endpoint
+app.post('/api/upload-document', fetchuser, documentUpload.single('document'), async (req, res) => {
+  try {
+    if (!req.file) {
+      return res.status(400).json({
+        success: false,
+        message: 'No file uploaded'
+      });
+    }
+
+    const documentUrl = `/uploads/documents/${req.file.filename}`;
+
+    // Find the current user data first
+    const currentUser = await Users.findById(req.user.id);
+    if (!currentUser) {
+      return res.status(404).json({
+        success: false,
+        message: 'User not found'
+      });
+    }
+
+    // Update only the document fields while preserving all other fields
+    const updatedUser = await Users.findByIdAndUpdate(
+      req.user.id,
+      {
+        document: documentUrl,
+        documentVerified: false,
+        // Preserve existing data
+        upiId: currentUser.upiId,
+        address: {
+          ...currentUser.address,
+          phone: currentUser.address?.phone || ''  // Explicitly preserve phone
+        }
+      },
+      { 
+        new: true,
+        runValidators: true
+      }
+    ).select('-password');
+
+    res.json({
+      success: true,
+      documentUrl: documentUrl,
+      user: updatedUser
+    });
+
+  } catch (error) {
+    console.error('Error uploading document:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Error uploading document'
     });
   }
 });
@@ -821,9 +1285,6 @@ app.listen(port, (error) => {
   if (!error) console.log("Server Running on port " + port);
   else console.log("Error : ", error);
 });
-
-// Export the model
-module.exports = SellerProduct;
 
 
 

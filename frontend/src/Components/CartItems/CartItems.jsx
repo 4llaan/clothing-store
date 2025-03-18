@@ -1,13 +1,15 @@
-import React, { useContext } from "react";
+import React, { useContext, useState } from "react";
 import "./CartItems.css";
 import cross_icon from "../Assets/cart_cross_icon.png";
 import { ShopContext } from "../../Context/ShopContext";
 import { backend_url, currency } from "../../App";
 import { useNavigate } from 'react-router-dom';
+import ImageModal from '../ImageModal/ImageModal';
 
 const CartItems = () => {
-  const { products, cartItems, removeFromCart, getTotalCartAmount, updateCartItemQuantity } = useContext(ShopContext);
+  const { products, thriftProducts, cartItems, removeFromCart, getTotalCartAmount, updateCartItemQuantity } = useContext(ShopContext);
   const navigate = useNavigate();
+  const [selectedImage, setSelectedImage] = useState(null);
 
   const loadRazorpayScript = () => {
     return new Promise((resolve) => {
@@ -29,16 +31,20 @@ const CartItems = () => {
     const checkoutItems = Object.entries(cartItems)
       .filter(([_, itemInfo]) => itemInfo && itemInfo.quantity > 0)
       .map(([productId, itemInfo]) => {
-        const product = products.find(p => p.id === Number(productId));
+        const regularProduct = products.find((p) => p.id === Number(productId));
+        const thriftProduct = thriftProducts.find((p) => p._id === productId);
+        const product = regularProduct || thriftProduct;
         if (!product) return null;
+        
         return {
-          id: productId,
-          name: product.name,
-          price: product.new_price,
+          id: productId.toString(),
+          name: product.name || product.productName,
+          price: product.new_price || product.price,
           quantity: itemInfo.quantity,
           size: itemInfo.size || 'N/A',
-          image: product.image,
-          subTotal: product.new_price * itemInfo.quantity
+          images: product.images || [product.image],
+          subTotal: (product.new_price || product.price) * itemInfo.quantity,
+          isThriftProduct: Boolean(thriftProduct)
         };
       })
       .filter(item => item !== null);
@@ -52,13 +58,21 @@ const CartItems = () => {
     navigate('/review-order', {
       state: {
         cartItems: checkoutItems,
-        totalAmount: getTotalCartAmount()
+        totalAmount: getTotalCartAmount(),
+        fromCart: true
       }
     });
   };
 
   return (
     <div className="cartitems">
+      {selectedImage && (
+        <ImageModal 
+          image={`${backend_url}${selectedImage}`}
+          onClose={() => setSelectedImage(null)}
+        />
+      )}
+
       <div className="cartitems-format-main">
         <p>Products</p>
         <p>Title</p>
@@ -71,32 +85,71 @@ const CartItems = () => {
       <hr />
       {Object.entries(cartItems).map(([itemId, itemInfo]) => {
         if (!itemInfo) return null;
-        const product = products.find((p) => p.id === Number(itemId));
+        
+        // Find product in either regular or thrift products
+        const regularProduct = products.find((p) => p.id === Number(itemId));
+        const thriftProduct = thriftProducts.find((p) => p._id === itemId);
+        const product = regularProduct || thriftProduct;
+        
         if (product && itemInfo.quantity > 0) {
+          const productImages = product.images || [product.image];
+          const productPrice = product.new_price || product.price;
+          const productName = product.name || product.productName;
+          const isThriftProduct = Boolean(thriftProduct);
+          
           return (
             <div key={itemId}>
               <div className="cartitems-format-main cartitems-format">
-                <img className="cartitems-product-icon" src={backend_url + product.image} alt="" />
-                <p className="cartitems-product-title">{product.name}</p>
-                <p>{itemInfo.size || 'N/A'}</p>
-                <p>{currency}{product.new_price}</p>
-                <div className="cartitems-quantity-controls">
-                  <button 
-                    onClick={() => updateCartItemQuantity(itemId, itemInfo.quantity - 1)}
-                    className="quantity-btn"
-                    disabled={itemInfo.quantity <= 1}
-                  >
-                    -
-                  </button>
-                  <p className="cartitems-quantity">{itemInfo.quantity}</p>
-                  <button 
-                    onClick={() => updateCartItemQuantity(itemId, itemInfo.quantity + 1)}
-                    className="quantity-btn"
-                  >
-                    
-                  </button>
+                <div className="cartitems-product-images">
+                  <img 
+                    className="cartitems-product-icon" 
+                    src={`${backend_url}${productImages[0]}`} 
+                    alt={productName}
+                    onClick={() => setSelectedImage(productImages[0])}
+                    style={{ cursor: 'pointer' }}
+                  />
+                  
+                  {productImages.length > 1 && (
+                    <div className="cartitems-product-thumbnails">
+                      {productImages.slice(1).map((image, index) => (
+                        <img
+                          key={index}
+                          src={`${backend_url}${image}`}
+                          alt={`${productName} view ${index + 2}`}
+                          className="cartitems-thumbnail"
+                          onClick={() => setSelectedImage(image)}
+                          style={{ cursor: 'pointer' }}
+                        />
+                      ))}
+                    </div>
+                  )}
                 </div>
-                <p>{currency}{product.new_price * itemInfo.quantity}</p>
+                <p className="cartitems-product-title">{productName}</p>
+                <p>{itemInfo.size || 'N/A'}</p>
+                <p>{currency}{productPrice}</p>
+                <div className="cartitems-quantity-controls">
+                  {isThriftProduct ? (
+                    <p className="cartitems-quantity">1</p>
+                  ) : (
+                    <>
+                      <button 
+                        onClick={() => updateCartItemQuantity(itemId, itemInfo.quantity - 1)}
+                        className="quantity-btn"
+                        disabled={itemInfo.quantity <= 1}
+                      >
+                        -
+                      </button>
+                      <p className="cartitems-quantity">{itemInfo.quantity}</p>
+                      <button 
+                        onClick={() => updateCartItemQuantity(itemId, itemInfo.quantity + 1)}
+                        className="quantity-btn"
+                      >
+                        +
+                      </button>
+                    </>
+                  )}
+                </div>
+                <p>{currency}{productPrice * itemInfo.quantity}</p>
                 <img
                   onClick={() => removeFromCart(itemId)}
                   className="cartitems-remove-icon"

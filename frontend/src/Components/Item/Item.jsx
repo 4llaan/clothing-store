@@ -4,11 +4,16 @@ import { Link } from 'react-router-dom';
 import { backend_url, currency } from '../../App';
 
 const Item = (props) => {
+  // Use the first image from the images array
+  const displayImage = Array.isArray(props.images) && props.images.length > 0 
+    ? props.images[0] 
+    : props.image; // Fallback to single image for backward compatibility
+
   return (
     <div className='item'>
       {/* Product Image */}
       <Link to={`/product/${props.id}`}>
-        <img onClick={window.scrollTo(0, 0)} src={backend_url + props.image} alt="product" />
+        <img onClick={window.scrollTo(0, 0)} src={backend_url + displayImage} alt="product" />
       </Link>
 
       {/* Product Name */}
